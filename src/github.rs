@@ -93,25 +93,97 @@ impl GitHubClient {
 
     /// Fetches forks for a repository stubbed for later implementation.
     pub async fn fetch_repo_forks(&self, _owner: &str, _repo: &str) -> Result<Vec<Repo>, AppError> {
-        Err(AppError::NotImplemented)
+        let owner = _owner;
+        let repo = _repo;
+
+        let base_url = Url::parse(&self.config.api_base).map_err(|err| {
+            AppError::Config(format!("invalid GitHub API base url: {err}"))
+        })?;
+
+        let url = base_url.join(&format!("repos/{owner}/{repo}/forks")).map_err(|err| {
+            AppError::Config(format!("failed to construct forks endpoint URL: {err}"))
+        })?;
+
+        let response = self
+            .http
+            .get(url)
+            .query(&[
+                ("per_page", "100".to_string()),
+                ("page", "1".to_string()),
+                ("sort", "newest".to_string()),
+            ])
+            .send()
+            .await
+            .map_err(AppError::from)?;
+
+        let response = response.error_for_status().map_err(AppError::from)?;
+        let body = response.text().await.map_err(AppError::from)?;
+        let parsed: Vec<Repo> = serde_json::from_str(&body).map_err(AppError::from)?;
+
+        Ok(parsed)
     }
 
     /// Fetches recent commits for a repository stubbed for later implementation.
-    pub async fn fetch_recent_commits(
-        &self,
-        _owner: &str,
-        _repo: &str,
-    ) -> Result<Vec<Commit>, AppError> {
-        Err(AppError::NotImplemented)
+    pub async fn fetch_recent_commits(&self,_owner: &str,_repo: &str,) -> Result<Vec<Commit>, AppError> {
+        let owner = _owner;
+        let repo = _repo;
+
+        let base_url = Url::parse(&self.config.api_base).map_err(|err| {
+            AppError::Config(format!("invalid GitHub API base url: {err}"))
+        })?;
+
+        let url = base_url.join(&format!("repos/{owner}/{repo}/commits")).map_err(|err| {
+            AppError::Config(format!("failed to construct commits endpoint URL: {err}"))
+        })?;
+
+        let response = self
+            .http
+            .get(url)
+            .query(&[
+                ("per_page", "50".to_string()),
+                ("page", "1".to_string()),
+            ])
+            .send()
+            .await
+            .map_err(AppError::from)?;
+
+        let response = response.error_for_status().map_err(AppError::from)?;
+        let body = response.text().await.map_err(AppError::from)?;
+        let parsed: Vec<Commit> = serde_json::from_str(&body).map_err(AppError::from)?;
+
+        Ok(parsed)
     }
 
     /// Fetches open issues for a repository stubbed for later implementation.
-    pub async fn fetch_open_issues(
-        &self,
-        _owner: &str,
-        _repo: &str,
-    ) -> Result<Vec<Issue>, AppError> {
-        Err(AppError::NotImplemented)
+    pub async fn fetch_open_issues(&self,_owner: &str,_repo: &str,) -> Result<Vec<Issue>, AppError> {
+        let owner = _owner;
+        let repo = _repo;
+
+        let base_url = Url::parse(&self.config.api_base).map_err(|err| {
+            AppError::Config(format!("invalid GitHub API base url: {err}"))
+        })?;
+
+        let url = base_url.join(&format!("repos/{owner}/{repo}/issues")).map_err(|err| {
+            AppError::Config(format!("failed to construct issues endpoint URL: {err}"))
+        })?;
+
+        let response = self
+            .http
+            .get(url)
+            .query(&[
+                ("state", "open".to_string()),
+                ("per_page", "100".to_string()),
+                ("page", "1".to_string()),
+            ])
+            .send()
+            .await
+            .map_err(AppError::from)?;
+
+        let response = response.error_for_status().map_err(AppError::from)?;
+        let body = response.text().await.map_err(AppError::from)?;
+        let parsed: Vec<Issue> = serde_json::from_str(&body).map_err(AppError::from)?;
+
+        Ok(parsed)
     }
 }
 
