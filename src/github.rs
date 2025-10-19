@@ -1,6 +1,6 @@
 use reqwest::Client;
-use reqwest::header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue, USER_AGENT};
 use reqwest::Url;
+use reqwest::header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue, USER_AGENT};
 use serde::Deserialize;
 
 use crate::config::GitHubConfig;
@@ -62,9 +62,8 @@ impl GitHubClient {
         let language = _language;
         let per_page = _per_page.clamp(1, 100);
 
-        let base_url = Url::parse(&self.config.api_base).map_err(|err| {
-            AppError::Config(format!("invalid GitHub API base url: {err}"))
-        })?;
+        let base_url = Url::parse(&self.config.api_base)
+            .map_err(|err| AppError::Config(format!("invalid GitHub API base url: {err}")))?;
 
         let url = base_url.join("search/repositories").map_err(|err| {
             AppError::Config(format!("failed to construct search endpoint URL: {err}"))
@@ -86,7 +85,8 @@ impl GitHubClient {
 
         let response = response.error_for_status().map_err(AppError::from)?;
         let body = response.text().await.map_err(AppError::from)?;
-        let parsed: SearchRepositoriesResponse = serde_json::from_str(&body).map_err(AppError::from)?;
+        let parsed: SearchRepositoriesResponse =
+            serde_json::from_str(&body).map_err(AppError::from)?;
 
         Ok(parsed.items)
     }
@@ -96,13 +96,14 @@ impl GitHubClient {
         let owner = _owner;
         let repo = _repo;
 
-        let base_url = Url::parse(&self.config.api_base).map_err(|err| {
-            AppError::Config(format!("invalid GitHub API base url: {err}"))
-        })?;
+        let base_url = Url::parse(&self.config.api_base)
+            .map_err(|err| AppError::Config(format!("invalid GitHub API base url: {err}")))?;
 
-        let url = base_url.join(&format!("repos/{owner}/{repo}/forks")).map_err(|err| {
-            AppError::Config(format!("failed to construct forks endpoint URL: {err}"))
-        })?;
+        let url = base_url
+            .join(&format!("repos/{owner}/{repo}/forks"))
+            .map_err(|err| {
+                AppError::Config(format!("failed to construct forks endpoint URL: {err}"))
+            })?;
 
         let response = self
             .http
@@ -124,25 +125,27 @@ impl GitHubClient {
     }
 
     /// Fetches recent commits for a repository stubbed for later implementation.
-    pub async fn fetch_recent_commits(&self,_owner: &str,_repo: &str,) -> Result<Vec<Commit>, AppError> {
+    pub async fn fetch_recent_commits(
+        &self,
+        _owner: &str,
+        _repo: &str,
+    ) -> Result<Vec<Commit>, AppError> {
         let owner = _owner;
         let repo = _repo;
 
-        let base_url = Url::parse(&self.config.api_base).map_err(|err| {
-            AppError::Config(format!("invalid GitHub API base url: {err}"))
-        })?;
+        let base_url = Url::parse(&self.config.api_base)
+            .map_err(|err| AppError::Config(format!("invalid GitHub API base url: {err}")))?;
 
-        let url = base_url.join(&format!("repos/{owner}/{repo}/commits")).map_err(|err| {
-            AppError::Config(format!("failed to construct commits endpoint URL: {err}"))
-        })?;
+        let url = base_url
+            .join(&format!("repos/{owner}/{repo}/commits"))
+            .map_err(|err| {
+                AppError::Config(format!("failed to construct commits endpoint URL: {err}"))
+            })?;
 
         let response = self
             .http
             .get(url)
-            .query(&[
-                ("per_page", "50".to_string()),
-                ("page", "1".to_string()),
-            ])
+            .query(&[("per_page", "50".to_string()), ("page", "1".to_string())])
             .send()
             .await
             .map_err(AppError::from)?;
@@ -155,17 +158,22 @@ impl GitHubClient {
     }
 
     /// Fetches open issues for a repository stubbed for later implementation.
-    pub async fn fetch_open_issues(&self,_owner: &str,_repo: &str,) -> Result<Vec<Issue>, AppError> {
+    pub async fn fetch_open_issues(
+        &self,
+        _owner: &str,
+        _repo: &str,
+    ) -> Result<Vec<Issue>, AppError> {
         let owner = _owner;
         let repo = _repo;
 
-        let base_url = Url::parse(&self.config.api_base).map_err(|err| {
-            AppError::Config(format!("invalid GitHub API base url: {err}"))
-        })?;
+        let base_url = Url::parse(&self.config.api_base)
+            .map_err(|err| AppError::Config(format!("invalid GitHub API base url: {err}")))?;
 
-        let url = base_url.join(&format!("repos/{owner}/{repo}/issues")).map_err(|err| {
-            AppError::Config(format!("failed to construct issues endpoint URL: {err}"))
-        })?;
+        let url = base_url
+            .join(&format!("repos/{owner}/{repo}/issues"))
+            .map_err(|err| {
+                AppError::Config(format!("failed to construct issues endpoint URL: {err}"))
+            })?;
 
         let response = self
             .http
