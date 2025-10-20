@@ -126,9 +126,16 @@ impl GitHubClient {
 
         let response = response.error_for_status().map_err(AppError::from)?;
         let body = response.text().await.map_err(AppError::from)?;
-        let parsed: Vec<Repo> = serde_json::from_str(&body).map_err(AppError::from)?;
+        let root: Value = serde_json::from_str(&body).map_err(AppError::from)?;
 
-        Ok(parsed)
+        let items = root
+            .as_array()
+            .ok_or_else(|| json_error("GitHub forks response was not an array"))?;
+
+        items
+            .iter()
+            .map(Repo::from_json)
+            .collect::<Result<Vec<_>, _>>()
     }
 
     /// Fetches recent commits for a repository stubbed for later implementation.
@@ -159,9 +166,16 @@ impl GitHubClient {
 
         let response = response.error_for_status().map_err(AppError::from)?;
         let body = response.text().await.map_err(AppError::from)?;
-        let parsed: Vec<Commit> = serde_json::from_str(&body).map_err(AppError::from)?;
+        let root: Value = serde_json::from_str(&body).map_err(AppError::from)?;
 
-        Ok(parsed)
+        let items = root
+            .as_array()
+            .ok_or_else(|| json_error("GitHub commits response was not an array"))?;
+
+        items
+            .iter()
+            .map(Commit::from_json)
+            .collect::<Result<Vec<_>, _>>()
     }
 
     /// Fetches open issues for a repository stubbed for later implementation.
@@ -196,9 +210,16 @@ impl GitHubClient {
 
         let response = response.error_for_status().map_err(AppError::from)?;
         let body = response.text().await.map_err(AppError::from)?;
-        let parsed: Vec<Issue> = serde_json::from_str(&body).map_err(AppError::from)?;
+        let root: Value = serde_json::from_str(&body).map_err(AppError::from)?;
 
-        Ok(parsed)
+        let items = root
+            .as_array()
+            .ok_or_else(|| json_error("GitHub issues response was not an array"))?;
+
+        items
+            .iter()
+            .map(Issue::from_json)
+            .collect::<Result<Vec<_>, _>>()
     }
 }
 
