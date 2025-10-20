@@ -1,7 +1,7 @@
 use reqwest::Client;
 use reqwest::Url;
 use reqwest::header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue, USER_AGENT};
-use serde::Deserialize;
+use serde_json::Value;
 
 use crate::config::GitHubConfig;
 use crate::error::AppError;
@@ -85,10 +85,17 @@ impl GitHubClient {
 
         let response = response.error_for_status().map_err(AppError::from)?;
         let body = response.text().await.map_err(AppError::from)?;
-        let parsed: SearchRepositoriesResponse =
-            serde_json::from_str(&body).map_err(AppError::from)?;
+        let root: Value = serde_json::from_str(&body).map_err(AppError::from)?;
 
-        Ok(parsed.items)
+        let items = root
+            .get("items")
+            .and_then(Value::as_array)
+            .ok_or_else(|| json_error("GitHub search response missing `items` array"))?;
+
+        items
+            .iter()
+            .map(Repo::from_json)
+            .collect::<Result<Vec<_>, _>>()
     }
 
     /// Fetches forks for a repository stubbed for later implementation.
@@ -195,13 +202,10 @@ impl GitHubClient {
     }
 }
 
-#[derive(Debug, Deserialize)]
-struct SearchRepositoriesResponse {
-    #[allow(dead_code)]
-    total_count: u64,
-    #[allow(dead_code)]
-    incomplete_results: bool,
-    items: Vec<Repo>,
+fn json_error(message: impl Into<String>) -> AppError {
+    AppError::Serialization(<serde_json::Error as serde::de::Error>::custom(
+        message.into(),
+    ))
 }
 
 #[cfg(test)]
