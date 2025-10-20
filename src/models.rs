@@ -119,6 +119,26 @@ pub struct Repo {
 }
 
 impl Repo {
+    pub fn from_json(value: &Value) -> Result<Self, AppError> {
+        let map = as_object(value, "repository")?;
+
+        Ok(Self {
+            id: required_i64(map, "id")?,
+            name: required_string(map, "name")?,
+            full_name: required_string(map, "full_name")?,
+            html_url: required_string(map, "html_url")?,
+            forks_count: optional_u64(map, "forks_count"),
+            stargazers_count: optional_u64(map, "stargazers_count"),
+            open_issues_count: optional_u64(map, "open_issues_count"),
+            language: optional_string(map, "language"),
+            owner: Owner::from_json(required_field(map, "owner")?)?,
+            forks: Vec::new(),
+            recent_commits: Vec::new(),
+            issues: Vec::new(),
+            commit_count: 0,
+        })
+    }
+
     pub fn slug(&self) -> String {
         format!("{}/{}", self.owner.login, self.name)
     }
@@ -136,11 +156,43 @@ pub struct Commit {
     pub files: Vec<CommitFile>,
 }
 
+impl Commit {
+    pub fn from_json(value: &Value) -> Result<Self, AppError> {
+        let map = as_object(value, "commit")?;
+
+        Ok(Self {
+            sha: required_string(map, "sha")?,
+            url: optional_string(map, "url").unwrap_or_default(),
+            html_url: optional_string(map, "html_url"),
+            commit: CommitSummary::from_json(required_field(map, "commit")?)?,
+            files: match map.get("files") {
+                Some(Value::Array(items)) => items
+                    .iter()
+                    .map(CommitFile::from_json)
+                    .collect::<Result<Vec<_>, _>>()?,
+                _ => Vec::new(),
+            },
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CommitSummary {
     pub message: String,
     pub author: Option<CommitAuthor>,
     pub committer: Option<CommitAuthor>,
+}
+
+impl CommitSummary {
+    pub fn from_json(value: &Value) -> Result<Self, AppError> {
+        let map = as_object(value, "commit summary")?;
+
+        Ok(Self {
+            message: required_string(map, "message")?,
+            author: parse_optional(map, "author", CommitAuthor::from_json)?,
+            committer: parse_optional(map, "committer", CommitAuthor::from_json)?,
+        })
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -149,6 +201,18 @@ pub struct CommitAuthor {
     pub email: Option<String>,
     #[serde(rename = "date", default)]
     pub date: Option<String>,
+}
+
+impl CommitAuthor {
+    pub fn from_json(value: &Value) -> Result<Self, AppError> {
+        let map = as_object(value, "commit author")?;
+
+        Ok(Self {
+            name: optional_string(map, "name"),
+            email: optional_string(map, "email"),
+            date: optional_string(map, "date"),
+        })
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -164,6 +228,20 @@ pub struct CommitFile {
     pub status: String,
 }
 
+impl CommitFile {
+    pub fn from_json(value: &Value) -> Result<Self, AppError> {
+        let map = as_object(value, "commit file")?;
+
+        Ok(Self {
+            filename: required_string(map, "filename")?,
+            additions: optional_i64(map, "additions"),
+            deletions: optional_i64(map, "deletions"),
+            changes: optional_i64(map, "changes"),
+            status: optional_string(map, "status").unwrap_or_default(),
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Issue {
     pub title: String,
@@ -176,4 +254,19 @@ pub struct Issue {
     pub created_at: String,
     #[serde(rename = "updated_at")]
     pub updated_at: String,
+}
+
+impl Issue {
+    pub fn from_json(value: &Value) -> Result<Self, AppError> {
+        let map = as_object(value, "issue")?;
+
+        Ok(Self {
+            title: required_string(map, "title")?,
+            body: optional_string(map, "body"),
+            state: required_string(map, "state")?,
+            html_url: optional_string(map, "html_url"),
+            created_at: required_string(map, "created_at")?,
+            updated_at: required_string(map, "updated_at")?,
+        })
+    }
 }
