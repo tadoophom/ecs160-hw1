@@ -1,3 +1,5 @@
+//! Loads GitHub configuration details from the environment or injected sources.
+//! Centralizes token, base URL, and agent logic.
 use std::env;
 
 use crate::error::AppError;

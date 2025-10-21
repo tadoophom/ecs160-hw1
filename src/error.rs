@@ -1,3 +1,5 @@
+//! Central error definitions shared by services, models, and the app layer.
+//! Wraps configuration, HTTP, and serialization failures in one type.
 use std::io;
 
 use thiserror::Error;

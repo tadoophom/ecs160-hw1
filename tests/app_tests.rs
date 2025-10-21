@@ -1,17 +1,19 @@
-use super::*;
+//! Integration-style tests that exercise the application workflow via mocks.
+//! They ensure the app layer composes the service and models correctly.
+use ecs160_hw1::app::{collect_language_snapshot, ForkSummary, LanguageSnapshot};
 use ecs160_hw1::config::GitHubConfig;
-use ecs160_hw1::github::GitHubClient;
+use ecs160_hw1::GitService;
 use httpmock::prelude::*;
 use serde_json::json;
 
-fn client_with_base(base_url: &str) -> GitHubClient {
+fn service_with_base(base_url: &str) -> GitService {
     let config = GitHubConfig {
         token: None,
         api_base: base_url.to_string(),
         user_agent: "ecs160-test-agent/0.1".to_string(),
     };
 
-    GitHubClient::new(config).expect("failed to construct test client")
+    GitService::new(config).expect("failed to construct test client")
 }
 
 fn sample_search_response() -> serde_json::Value {
@@ -110,8 +112,8 @@ async fn collect_language_snapshot_fetches_top_repo_and_forks() {
         })
         .await;
 
-    let client = client_with_base(&server.base_url());
-    let snapshot = collect_language_snapshot(&client, "Rust", 5)
+    let service = service_with_base(&server.base_url());
+    let snapshot = collect_language_snapshot(&service, "Rust", 5)
         .await
         .expect("snapshot should be collected");
 
@@ -157,8 +159,8 @@ async fn collect_language_snapshot_handles_fork_errors() {
         })
         .await;
 
-    let client = client_with_base(&server.base_url());
-    let snapshot = collect_language_snapshot(&client, "Rust", 5)
+    let service = service_with_base(&server.base_url());
+    let snapshot = collect_language_snapshot(&service, "Rust", 5)
         .await
         .expect("snapshot should be collected even if fork fetch fails");
 
