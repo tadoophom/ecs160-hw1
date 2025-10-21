@@ -174,11 +174,7 @@ impl GitService {
     }
 
     /// Fetches open issues for a repository.
-    pub async fn fetch_open_issues(
-        &self,
-        owner: &str,
-        repo: &str,
-    ) -> Result<Vec<Issue>, AppError> {
+    pub async fn fetch_open_issues(&self, owner: &str, repo: &str) -> Result<Vec<Issue>, AppError> {
         let base_url = Url::parse(&self.config.api_base)
             .map_err(|err| AppError::Config(format!("invalid GitHub API base url: {err}")))?;
 
@@ -227,15 +223,12 @@ impl GitService {
         let url = base_url
             .join(&format!("repos/{owner}/{repo}/commits/{sha}"))
             .map_err(|err| {
-                AppError::Config(format!("failed to construct commit detail endpoint URL: {err}"))
+                AppError::Config(format!(
+                    "failed to construct commit detail endpoint URL: {err}"
+                ))
             })?;
 
-        let response = self
-            .http
-            .get(url)
-            .send()
-            .await
-            .map_err(AppError::from)?;
+        let response = self.http.get(url).send().await.map_err(AppError::from)?;
 
         let response = response.error_for_status().map_err(AppError::from)?;
         let body = response.text().await.map_err(AppError::from)?;

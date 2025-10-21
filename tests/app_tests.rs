@@ -1,8 +1,8 @@
 //! Integration-style tests that exercise the application workflow via mocks.
 //! They ensure the app layer composes the service and models correctly.
-use ecs160_hw1::app::{collect_language_snapshot, ForkSummary, LanguageSnapshot};
-use ecs160_hw1::config::GitHubConfig;
 use ecs160_hw1::GitService;
+use ecs160_hw1::app::{ForkSummary, LanguageSnapshot, collect_language_snapshot};
+use ecs160_hw1::config::GitHubConfig;
 use httpmock::prelude::*;
 use serde_json::json;
 
