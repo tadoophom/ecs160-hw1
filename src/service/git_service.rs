@@ -213,6 +213,36 @@ impl GitService {
             .map(Issue::from_json)
             .collect::<Result<Vec<_>, _>>()
     }
+
+    /// Fetches a single commit with complete file details
+    pub async fn fetch_commit_with_files(
+        &self,
+        owner: &str,
+        repo: &str,
+        sha: &str,
+    ) -> Result<Commit, AppError> {
+        let base_url = Url::parse(&self.config.api_base)
+            .map_err(|err| AppError::Config(format!("invalid GitHub API base url: {err}")))?;
+
+        let url = base_url
+            .join(&format!("repos/{owner}/{repo}/commits/{sha}"))
+            .map_err(|err| {
+                AppError::Config(format!("failed to construct commit detail endpoint URL: {err}"))
+            })?;
+
+        let response = self
+            .http
+            .get(url)
+            .send()
+            .await
+            .map_err(AppError::from)?;
+
+        let response = response.error_for_status().map_err(AppError::from)?;
+        let body = response.text().await.map_err(AppError::from)?;
+        let root: Value = serde_json::from_str(&body).map_err(AppError::from)?;
+
+        Commit::from_json(&root)
+    }
 }
 
 #[cfg(test)]
