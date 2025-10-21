@@ -50,7 +50,7 @@ pub async fn run() -> Result<(), AppError> {
     Ok(())
 }
 
-async fn collect_language_report(
+pub async fn collect_language_report(
     service: &GitService,
     language: &str,
 ) -> Result<LanguageReport, AppError> {
@@ -67,6 +67,7 @@ async fn collect_language_report(
             Ok(commits) => {
                 println!("      ✓ {}: {} commits", repo.slug(), commits.len());
 
+                repo.commit_count = commits.len() as u64;
                 let mut detailed_commits = Vec::new();
                 for commit in commits.iter().take(MAX_COMMITS_WITH_FILES) {
                     match service
@@ -84,7 +85,6 @@ async fn collect_language_report(
                     }
                 }
                 repo.recent_commits = detailed_commits;
-                repo.commit_count = repo.recent_commits.len() as u64;
             }
             Err(e) => {
                 eprintln!("      ✗ Failed to fetch commits for {}: {}", repo.slug(), e);
@@ -129,8 +129,8 @@ async fn collect_language_report(
                 .await
             {
                 Ok(commits) => {
+                    fork.commit_count = commits.len() as u64;
                     fork.recent_commits = commits;
-                    fork.commit_count = fork.recent_commits.len() as u64;
                 }
                 Err(e) => {
                     eprintln!(
@@ -155,7 +155,7 @@ async fn collect_language_report(
     let total_stars: u64 = repos.iter().map(|r| r.stargazers_count).sum();
     let total_forks: u64 = repos.iter().map(|r| r.forks_count).sum();
     let total_open_issues: usize = repos.iter().map(|r| r.issues.len()).sum();
-    let total_repo_commits: usize = repos.iter().map(|r| r.recent_commits.len()).sum();
+    let total_repo_commits: usize = repos.iter().map(|r| r.commit_count as usize).sum();
     let total_fork_commits: usize = repos
         .iter()
         .flat_map(|r| &r.forks)
