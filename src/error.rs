@@ -19,6 +19,8 @@ pub enum AppError {
     Io(#[from] io::Error),
     #[error("github api error: {0}")]
     GitHubApi(String),
+    #[error("git operation error: {0}")]
+    Git(String),
     #[error("feature not implemented yet")]
     NotImplemented,
 }
