@@ -20,12 +20,12 @@ pub struct Repo {
     pub open_issues_count: u64,
     pub language: Option<String>,
     pub owner: Owner,
+    pub created_at: Option<String>, 
     pub forks: Vec<Repo>,
     pub recent_commits: Vec<Commit>,
     pub issues: Vec<Issue>,
     pub commit_count: u64,
 }
-
 impl Repo {
     pub fn from_json(value: &Value) -> Result<Self, AppError> {
         let map = as_object(value, "repository")?;
@@ -40,6 +40,7 @@ impl Repo {
             open_issues_count: optional_u64(map, "open_issues_count"),
             language: optional_string(map, "language"),
             owner: Owner::from_json(required_field(map, "owner")?)?,
+            created_at: optional_string(map, "created_at"), 
             forks: Vec::new(),
             recent_commits: Vec::new(),
             issues: Vec::new(),

@@ -215,13 +215,16 @@ fn summarize_repos(repos: &[Repo]) -> (Vec<RepoMetrics>, usize) {
 
     for repo in repos {
         let top_files = compute_top_files(repo);
-        let fork_commits: usize = repo
+        
+        // Count only NEW commits (made after fork creation)
+        let new_fork_commits: usize = repo
             .forks
             .iter()
             .take(MAX_FORKS_TO_PROCESS)
-            .map(|fork| fork.commit_count as usize)
+            .map(|fork| count_new_commits(fork))
             .sum();
-        fork_commit_total += fork_commits;
+        
+        fork_commit_total += new_fork_commits;
 
         metrics.push(RepoMetrics {
             slug: repo.slug(),
@@ -230,6 +233,26 @@ fn summarize_repos(repos: &[Repo]) -> (Vec<RepoMetrics>, usize) {
     }
 
     (metrics, fork_commit_total)
+}
+
+fn count_new_commits(fork: &Repo) -> usize {
+    let Some(fork_created_at) = &fork.created_at else {
+        return 0; // Can't determine new commits without fork creation date
+    };
+
+    fork.recent_commits
+        .iter()
+        .filter(|commit| {
+            // Check if commit was made AFTER the fork was created
+            commit
+                .commit
+                .author
+                .as_ref()
+                .and_then(|author| author.date.as_ref())
+                .map(|commit_date| commit_date > fork_created_at)
+                .unwrap_or(false)
+        })
+        .count()
 }
 
 fn compute_top_files(repo: &Repo) -> Vec<String> {
