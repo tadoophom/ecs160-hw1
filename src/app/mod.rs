@@ -7,6 +7,8 @@ use std::collections::HashMap;
 use crate::model::Repo;
 use crate::service::GitService;
 
+pub mod clone;
+
 const TARGET_LANGUAGES: &[&str] = &["Java", "C", "C++", "Rust"];
 const TOP_N: u8 = 10;
 const MAX_FORKS_TO_PROCESS: usize = 20;
@@ -36,6 +38,8 @@ pub async fn run() -> Result<(), AppError> {
 
     println!("=== Part A: Fetching GitHub Repository Data ===\n");
 
+    let mut language_reports = Vec::new();
+
     for &language in TARGET_LANGUAGES {
         println!("Processing language: {}", language);
         println!("{}", "=".repeat(50));
@@ -48,6 +52,7 @@ pub async fn run() -> Result<(), AppError> {
                     language
                 );
                 print_summary(&report);
+                language_reports.push(report);
             }
             Err(err) => {
                 eprintln!("✗ Failed to process {}: {}", language, err);
@@ -56,6 +61,11 @@ pub async fn run() -> Result<(), AppError> {
 
         println!();
     }
+
+    // Part C: Clone and inspect repositories
+    let clone_base_dir = std::path::Path::new("./cloned_repos");
+    clone::process_repository_cloning(&language_reports, clone_base_dir).await?;
+
     Ok(())
 }
 
