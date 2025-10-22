@@ -19,32 +19,18 @@ pub struct SourceCodeHeuristics {
 
 impl Default for SourceCodeHeuristics {
     fn default() -> Self {
-        let mut source_extensions = HashSet::new();
-        // Languages we're actually analyzing
-        source_extensions.insert("java".to_string());
-        source_extensions.insert("c".to_string());
-        source_extensions.insert("cpp".to_string());
-        source_extensions.insert("cc".to_string());
-        source_extensions.insert("cxx".to_string());
-        source_extensions.insert("h".to_string());
-        source_extensions.insert("hpp".to_string());
-        source_extensions.insert("rs".to_string());
-        
-        // Common build/config files that indicate real projects
-        source_extensions.insert("cmake".to_string());
-        source_extensions.insert("makefile".to_string());
-        source_extensions.insert("gradle".to_string());
-        source_extensions.insert("maven".to_string());
-        source_extensions.insert("pom".to_string());
-        source_extensions.insert("cargo".to_string());
-        source_extensions.insert("toml".to_string());
-        source_extensions.insert("xml".to_string());
-        source_extensions.insert("properties".to_string());
-        source_extensions.insert("yaml".to_string());
-        source_extensions.insert("yml".to_string());
-        source_extensions.insert("json".to_string());
-        source_extensions.insert("sh".to_string());
-        source_extensions.insert("bat".to_string());
+        let extensions = [
+            // Languages we're analyzing
+            "java", "c", "cpp", "cc", "cxx", "h", "hpp", "rs",
+            // Build/config files
+            "cmake", "makefile", "gradle", "maven", "pom", "cargo", "toml",
+            "xml", "properties", "yaml", "yml", "json", "sh", "bat",
+        ];
+
+        let source_extensions = extensions
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
 
         Self {
             source_extensions,
@@ -67,8 +53,8 @@ pub fn analyze_repository_source_code(repo_path: &Path, heuristics: &SourceCodeH
             if path.is_file() {
                 total_files += 1;
                 
-                if let Some(extension) = path.extension().and_then(|ext| ext.to_str()) {
-                    let ext_lower = extension.to_lowercase();
+                if let Some(ext_str) = path.extension().and_then(|ext| ext.to_str()) {
+                    let ext_lower = ext_str.to_lowercase();
                     file_extensions.insert(ext_lower.clone());
                     
                     if heuristics.source_extensions.contains(&ext_lower) {
@@ -138,6 +124,50 @@ pub async fn clone_repository(repo: &Repo, clone_dir: &Path) -> Result<(), AppEr
     Ok(())
 }
 
+/// Attempts to clone and analyze a single repository
+async fn clone_and_analyze_repo(
+    repo: &Repo,
+    clone_dir: &Path,
+    heuristics: &SourceCodeHeuristics,
+) -> Result<Option<(Repo, SourceCodeAnalysis)>, AppError> {
+    if let Err(e) = clone_repository(repo, clone_dir).await {
+        eprintln!("    ⚠ Failed to clone {}: {}", repo.slug(), e);
+        return Ok(None);
+    }
+
+    match analyze_repository_source_code(clone_dir, heuristics) {
+        Ok(analysis) => {
+            println!(
+                "    {}: {} source files, {:.1}% source ratio",
+                repo.slug(),
+                analysis.source_files,
+                analysis.source_ratio * 100.0
+            );
+
+            if analysis.is_source_code_repo {
+                println!(
+                    "    ✓ {} appears to contain actual source code!",
+                    repo.slug()
+                );
+                return Ok(Some((repo.clone(), analysis)));
+            } else {
+                println!(
+                    "    ✗ {} appears to be documentation/tutorial",
+                    repo.slug()
+                );
+            }
+        }
+        Err(e) => eprintln!("    ⚠ Failed to analyze {}: {}", repo.slug(), e),
+    }
+
+    // Clean up the cloned directory
+    if let Err(e) = std::fs::remove_dir_all(clone_dir) {
+        eprintln!("    ⚠ Failed to clean up {}: {}", clone_dir.display(), e);
+    }
+
+    Ok(None)
+}
+
 /// Finds the most popular repository that contains actual source code for a given language
 pub async fn find_best_source_code_repo(
     repos: &[Repo], 
@@ -150,37 +180,9 @@ pub async fn find_best_source_code_repo(
     
     for repo in repos {
         let clone_dir = clone_base_dir.join(format!("{}-{}", language.to_lowercase(), repo.name));
-        
-        // Clone the repository
-        if let Err(e) = clone_repository(repo, &clone_dir).await {
-            eprintln!("    ⚠ Failed to clone {}: {}", repo.slug(), e);
-            continue;
-        }
-        
-        // Analyze the repository
-        match analyze_repository_source_code(&clone_dir, &heuristics) {
-            Ok(analysis) => {
-                println!("    {}: {} source files, {:.1}% source ratio",
-                    repo.slug(),
-                    analysis.source_files,
-                    analysis.source_ratio * 100.0
-                );
-                
-                if analysis.is_source_code_repo {
-                    println!("    ✓ {} appears to contain actual source code!", repo.slug());
-                    return Ok(Some((repo.clone(), analysis)));
-                } else {
-                    println!("    ✗ {} appears to be documentation/tutorial", repo.slug());
-                }
-            }
-            Err(e) => {
-                eprintln!("    ⚠ Failed to analyze {}: {}", repo.slug(), e);
-            }
-        }
-        
-        // Clean up the cloned directory
-        if let Err(e) = std::fs::remove_dir_all(&clone_dir) {
-            eprintln!("    ⚠ Failed to clean up {}: {}", clone_dir.display(), e);
+
+        if let Ok(Some(result)) = clone_and_analyze_repo(repo, &clone_dir, &heuristics).await {
+            return Ok(Some(result));
         }
     }
     

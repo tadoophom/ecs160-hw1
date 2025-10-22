@@ -21,53 +21,49 @@ pub fn required_field<'a>(map: &'a Map<String, Value>, field: &str) -> Result<&'
         .ok_or_else(|| json_error(format!("missing `{field}` field")))
 }
 
+// Generic extractor for required values with type conversion
+fn extract_required<T, F>(
+    map: &Map<String, Value>,
+    field: &str,
+    extractor: F,
+) -> Result<T, AppError>
+where
+    F: Fn(&Value) -> Option<T>,
+{
+    required_field(map, field)
+        .and_then(|v| extractor(v).ok_or_else(|| json_error(format!("`{field}` has invalid type"))))
+}
+
+// Generic extractor for optional values with type conversion
+fn extract_optional<T, F>(map: &Map<String, Value>, field: &str, extractor: F) -> Option<T>
+where
+    F: Fn(&Value) -> Option<T>,
+{
+    map.get(field).and_then(extractor)
+}
+
 pub fn required_string(map: &Map<String, Value>, field: &str) -> Result<String, AppError> {
-    required_field(map, field)?
-        .as_str()
-        .map(|value| value.to_string())
-        .ok_or_else(|| json_error(format!("`{field}` must be a string")))
+    extract_required(map, field, |v| v.as_str().map(|s| s.to_string()))
 }
 
 pub fn required_bool(map: &Map<String, Value>, field: &str) -> Result<bool, AppError> {
-    required_field(map, field)?
-        .as_bool()
-        .ok_or_else(|| json_error(format!("`{field}` must be a boolean")))
+    extract_required(map, field, |v| v.as_bool())
 }
 
 pub fn required_i64(map: &Map<String, Value>, field: &str) -> Result<i64, AppError> {
-    required_field(map, field)?
-        .as_i64()
-        .ok_or_else(|| json_error(format!("`{field}` must be a 64-bit integer")))
+    extract_required(map, field, |v| v.as_i64())
 }
 
 pub fn optional_string(map: &Map<String, Value>, field: &str) -> Option<String> {
-    map.get(field)
-        .and_then(|value| value.as_str())
-        .map(|value| value.to_string())
+    extract_optional(map, field, |v| v.as_str().map(|s| s.to_string()))
 }
 
 pub fn optional_u64(map: &Map<String, Value>, field: &str) -> u64 {
-    map.get(field)
-        .and_then(|value| value.as_u64())
-        .unwrap_or_default()
+    extract_optional(map, field, |v| v.as_u64()).unwrap_or_default()
 }
 
 pub fn optional_i64(map: &Map<String, Value>, field: &str) -> i64 {
-    map.get(field)
-        .and_then(|value| value.as_i64())
-        .unwrap_or_default()
+    extract_optional(map, field, |v| v.as_i64()).unwrap_or_default()
 }
 
-pub fn parse_optional<T, F>(
-    map: &Map<String, Value>,
-    field: &str,
-    parser: F,
-) -> Result<Option<T>, AppError>
-where
-    F: Fn(&Value) -> Result<T, AppError>,
-{
-    match map.get(field) {
-        None | Some(Value::Null) => Ok(None),
-        Some(value) => parser(value).map(Some),
-    }
-}
+
