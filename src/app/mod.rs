@@ -2,6 +2,8 @@
 //! fetch all required data for Part A
 use crate::config::AppConfig;
 use crate::error::AppError;
+use std::collections::HashMap;
+
 use crate::model::Repo;
 use crate::service::GitService;
 
@@ -18,7 +20,14 @@ pub struct LanguageReport {
     pub total_forks: u64,
     pub total_open_issues: usize,
     pub total_repo_commits: usize,
-    pub total_fork_commits: usize,
+    pub new_fork_commits: usize,
+    pub repo_metrics: Vec<RepoMetrics>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RepoMetrics {
+    pub slug: String,
+    pub top_files: Vec<String>,
 }
 
 pub async fn run() -> Result<(), AppError> {
@@ -155,12 +164,8 @@ pub async fn collect_language_report(
     let total_stars: u64 = repos.iter().map(|r| r.stargazers_count).sum();
     let total_forks: u64 = repos.iter().map(|r| r.forks_count).sum();
     let total_open_issues: usize = repos.iter().map(|r| r.issues.len()).sum();
+    let (repo_metrics, new_fork_commits) = summarize_repos(&repos);
     let total_repo_commits: usize = repos.iter().map(|r| r.commit_count as usize).sum();
-    let total_fork_commits: usize = repos
-        .iter()
-        .flat_map(|r| &r.forks)
-        .map(|f| f.commit_count as usize)
-        .sum();
 
     Ok(LanguageReport {
         language: language.to_string(),
@@ -169,16 +174,71 @@ pub async fn collect_language_report(
         total_forks,
         total_open_issues,
         total_repo_commits,
-        total_fork_commits,
+        new_fork_commits,
+        repo_metrics,
     })
 }
 
 fn print_summary(report: &LanguageReport) {
-    println!("\n  Summary for {}:", report.language);
-    println!("  - Total repositories: {}", report.repos.len());
-    println!("  - Total stars: {}", report.total_stars);
-    println!("  - Total forks: {}", report.total_forks);
-    println!("  - Total open issues: {}", report.total_open_issues);
-    println!("  - Total commits fetched: {}", report.total_repo_commits);
-    println!("  - Commits in forked repos: {}", report.total_fork_commits);
+    println!("Language: {}", report.language);
+    println!("Total stars: {}", report.total_stars);
+    println!("Total forks: {}", report.total_forks);
+    println!("Open issues in top-10 repos: {}", report.total_open_issues);
+    println!("Total commits fetched: {}", report.total_repo_commits);
+    println!("New commits in forked repos: {}", report.new_fork_commits);
+    println!("Top-3 Most modified file per repo:");
+    for metrics in &report.repo_metrics {
+        println!("  Repo {}:", metrics.slug);
+        if metrics.top_files.is_empty() {
+            println!("    No files modified in recent commits");
+        } else {
+            for (idx, file) in metrics.top_files.iter().enumerate() {
+                println!("    File {}: {}", idx + 1, file);
+            }
+        }
+    }
+}
+
+fn summarize_repos(repos: &[Repo]) -> (Vec<RepoMetrics>, usize) {
+    let mut metrics = Vec::with_capacity(repos.len());
+    let mut fork_commit_total = 0usize;
+
+    for repo in repos {
+        let top_files = compute_top_files(repo);
+        let fork_commits: usize = repo
+            .forks
+            .iter()
+            .take(MAX_FORKS_TO_PROCESS)
+            .map(|fork| fork.commit_count as usize)
+            .sum();
+        fork_commit_total += fork_commits;
+
+        metrics.push(RepoMetrics {
+            slug: repo.slug(),
+            top_files,
+        });
+    }
+
+    (metrics, fork_commit_total)
+}
+
+fn compute_top_files(repo: &Repo) -> Vec<String> {
+    let mut by_file: HashMap<String, i64> = HashMap::new();
+
+    for commit in &repo.recent_commits {
+        for file in &commit.files {
+            let mut score = file.changes;
+            if score == 0 {
+                score = file.additions + file.deletions;
+            }
+            by_file
+                .entry(file.filename.clone())
+                .and_modify(|total| *total += score)
+                .or_insert(score);
+        }
+    }
+
+    let mut items: Vec<(String, i64)> = by_file.into_iter().collect();
+    items.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    items.into_iter().map(|(name, _)| name).take(3).collect()
 }

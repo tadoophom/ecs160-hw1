@@ -257,7 +257,11 @@ async fn collect_language_report_fetches_repo_details() {
     assert_eq!(report.total_forks, 5);
     assert_eq!(report.total_open_issues, 1);
     assert_eq!(report.total_repo_commits, 1);
-    assert_eq!(report.total_fork_commits, 0);
+    assert_eq!(report.new_fork_commits, 0);
+    assert_eq!(report.repo_metrics.len(), 1);
+    let repo_metrics = &report.repo_metrics[0];
+    assert_eq!(repo_metrics.slug, "octocat/repo-one");
+    assert_eq!(repo_metrics.top_files, vec!["src/main.rs".to_string()]);
 
     let repo = &report.repos[0];
     assert_eq!(repo.slug(), "octocat/repo-one");
@@ -352,7 +356,13 @@ async fn collect_language_report_handles_fork_errors() {
 
     assert_eq!(report.repos.len(), 1);
     assert!(report.repos[0].forks.is_empty());
-    assert_eq!(report.total_fork_commits, 0);
+    assert_eq!(report.new_fork_commits, 0);
+    assert_eq!(report.repo_metrics.len(), 1);
+    assert!(
+        report.repo_metrics[0]
+            .top_files
+            .contains(&"src/main.rs".to_string())
+    );
 
     search_mock.assert();
     commits_mock.assert();
