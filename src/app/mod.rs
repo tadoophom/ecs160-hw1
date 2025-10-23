@@ -193,20 +193,19 @@ fn print_summary(report: &LanguageReport) {
     println!("Language: {}", report.language);
     println!("Total stars: {}", report.total_stars);
     println!("Total forks: {}", report.total_forks);
-    println!("Open issues in top-10 repos: {}", report.total_open_issues);
-    println!("Total commits fetched: {}", report.total_repo_commits);
-    println!("New commits in forked repos: {}", report.new_fork_commits);
     println!("Top-3 Most modified file per repo:");
     for metrics in &report.repo_metrics {
-        println!("  Repo {}:", metrics.slug);
+        println!("  Repo name: {}", metrics.slug);
         if metrics.top_files.is_empty() {
             println!("    No files modified in recent commits");
         } else {
             for (idx, file) in metrics.top_files.iter().enumerate() {
-                println!("    File {}: {}", idx + 1, file);
+                println!("    File name{}: {}", idx + 1, file);
             }
         }
     }
+    println!("New commits in forked repos: {}", report.new_fork_commits);
+    println!("Open issues in top-10 repos: {}", report.total_open_issues);
 }
 
 fn summarize_repos(repos: &[Repo]) -> (Vec<RepoMetrics>, usize) {
