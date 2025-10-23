@@ -12,6 +12,7 @@ thiserror = "1.0"
 dotenvy = "0.15"
 chrono = { version = "0.4", features = ["serde"] }
 redis = { version = "0.25", features = ["aio", "tokio-comp", "connection-manager"] }
+walkdir = "2.4"
 
 [dev-dependencies]
 httpmock = "0.7"

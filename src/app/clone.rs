@@ -8,16 +8,16 @@ use std::process::Command;
 use crate::error::AppError;
 use crate::model::Repo;
 
-/// Heuristics to determine if a repository contains actual source code vs tutorials/documentation
+/// Rules to determine if a repository contains actual source code vs tutorials/documentation
 #[derive(Debug, Clone)]
-pub struct SourceCodeHeuristics {
+pub struct CodeDetectionRules {
     /// File extensions that indicate source code
     pub source_extensions: HashSet<String>,
     /// Minimum ratio of source files to total files to consider it a code repo
     pub min_source_ratio: f64,
 }
 
-impl Default for SourceCodeHeuristics {
+impl Default for CodeDetectionRules {
     fn default() -> Self {
         let extensions = [
             // Languages we're analyzing
@@ -25,6 +25,8 @@ impl Default for SourceCodeHeuristics {
             // Build/config files
             "cmake", "makefile", "gradle", "maven", "pom", "cargo", "toml",
             "xml", "properties", "yaml", "yml", "json", "sh", "bat",
+            // Additional C++ related files
+            "hxx", "c++", "h++", "tcc", "tpp", "txx",
         ];
 
         let source_extensions = extensions
@@ -34,20 +36,24 @@ impl Default for SourceCodeHeuristics {
 
         Self {
             source_extensions,
-            min_source_ratio: 0.1, // At least 10% source files
+            min_source_ratio: 0.05, // At least 5% source files (more lenient for large repos)
         }
     }
 }
 
-/// Analyzes a repository to determine if it contains actual source code
-pub fn analyze_repository_source_code(repo_path: &Path, heuristics: &SourceCodeHeuristics) -> Result<SourceCodeAnalysis, AppError> {
+/// Checks if a repository contains actual source code
+pub fn check_for_source_code(repo_path: &Path, rules: &CodeDetectionRules) -> Result<CodeAnalysis, AppError> {
     let mut source_files = 0;
     let mut total_files = 0;
     let mut file_extensions: HashSet<String> = HashSet::new();
 
-    // Walk through the repository directory
-    if let Ok(entries) = std::fs::read_dir(repo_path) {
-        for entry in entries.flatten() {
+    // Walk through the repository directory recursively
+    if let Ok(entries) = walkdir::WalkDir::new(repo_path)
+        .max_depth(3) // Limit depth to avoid going too deep into large repos
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()
+    {
+        for entry in entries {
             let path = entry.path();
             
             if path.is_file() {
@@ -57,7 +63,7 @@ pub fn analyze_repository_source_code(repo_path: &Path, heuristics: &SourceCodeH
                     let ext_lower = ext_str.to_lowercase();
                     file_extensions.insert(ext_lower.clone());
                     
-                    if heuristics.source_extensions.contains(&ext_lower) {
+                    if rules.source_extensions.contains(&ext_lower) {
                         source_files += 1;
                     }
                 }
@@ -71,9 +77,9 @@ pub fn analyze_repository_source_code(repo_path: &Path, heuristics: &SourceCodeH
         0.0
     };
 
-    let is_source_code_repo = source_ratio >= heuristics.min_source_ratio && source_files > 0;
+    let is_source_code_repo = source_ratio >= rules.min_source_ratio && source_files > 0;
 
-    Ok(SourceCodeAnalysis {
+    Ok(CodeAnalysis {
         source_files,
         total_files,
         source_ratio,
@@ -83,7 +89,7 @@ pub fn analyze_repository_source_code(repo_path: &Path, heuristics: &SourceCodeH
 }
 
 #[derive(Debug)]
-pub struct SourceCodeAnalysis {
+pub struct CodeAnalysis {
     pub source_files: usize,
     pub total_files: usize,
     pub source_ratio: f64,
@@ -124,18 +130,18 @@ pub async fn clone_repository(repo: &Repo, clone_dir: &Path) -> Result<(), AppEr
     Ok(())
 }
 
-/// Attempts to clone and analyze a single repository
-async fn clone_and_analyze_repo(
+/// Clones a repo and checks if it has real code
+async fn clone_and_check_repo(
     repo: &Repo,
     clone_dir: &Path,
-    heuristics: &SourceCodeHeuristics,
-) -> Result<Option<(Repo, SourceCodeAnalysis)>, AppError> {
+    rules: &CodeDetectionRules,
+) -> Result<Option<(Repo, CodeAnalysis)>, AppError> {
     if let Err(e) = clone_repository(repo, clone_dir).await {
         eprintln!("    ⚠ Failed to clone {}: {}", repo.slug(), e);
         return Ok(None);
     }
 
-    match analyze_repository_source_code(clone_dir, heuristics) {
+    match check_for_source_code(clone_dir, rules) {
         Ok(analysis) => {
             println!(
                 "    {}: {} source files, {:.1}% source ratio",
@@ -149,6 +155,7 @@ async fn clone_and_analyze_repo(
                     "    ✓ {} appears to contain actual source code!",
                     repo.slug()
                 );
+                // Keep the cloned directory - don't clean up
                 return Ok(Some((repo.clone(), analysis)));
             } else {
                 println!(
@@ -160,7 +167,7 @@ async fn clone_and_analyze_repo(
         Err(e) => eprintln!("    ⚠ Failed to analyze {}: {}", repo.slug(), e),
     }
 
-    // Clean up the cloned directory
+    // Clean up the cloned directory only if it's not suitable
     if let Err(e) = std::fs::remove_dir_all(clone_dir) {
         eprintln!("    ⚠ Failed to clean up {}: {}", clone_dir.display(), e);
     }
@@ -168,29 +175,41 @@ async fn clone_and_analyze_repo(
     Ok(None)
 }
 
-/// Finds the most popular repository that contains actual source code for a given language
-pub async fn find_best_source_code_repo(
+/// Finds the most popular repo with real code for a language
+pub async fn find_best_code_repo(
     repos: &[Repo], 
     language: &str,
     clone_base_dir: &Path,
-) -> Result<Option<(Repo, SourceCodeAnalysis)>, AppError> {
-    let heuristics = SourceCodeHeuristics::default();
+) -> Result<Option<(Repo, CodeAnalysis)>, AppError> {
+    let rules = CodeDetectionRules::default();
     
-    println!("  Analyzing repositories for source code content...");
+    println!("  Analyzing top {} repositories for source code content...", repos.len());
     
-    for repo in repos {
+    // Since repos are already sorted by stars in descending order,
+    // we check from most popular to least popular
+    for (i, repo) in repos.iter().enumerate() {
+        println!("    [{}/{}] Checking {} ({} stars)...", 
+            i + 1, repos.len(), repo.slug(), repo.stargazers_count);
+            
         let clone_dir = clone_base_dir.join(format!("{}-{}", language.to_lowercase(), repo.name));
 
-        if let Ok(Some(result)) = clone_and_analyze_repo(repo, &clone_dir, &heuristics).await {
-            return Ok(Some(result));
+        if let Ok(Some((repo_clone, analysis))) = clone_and_check_repo(repo, &clone_dir, &rules).await {
+            println!("    ✓ Found most popular source code repository: {} ({} stars)", 
+                repo.slug(), repo.stargazers_count);
+            println!("    ✓ Source files: {}, Source ratio: {:.1}%", 
+                analysis.source_files, analysis.source_ratio * 100.0);
+            return Ok(Some((repo_clone, analysis)));
+        } else {
+            println!("    ✗ {} appears to be documentation/tutorial only", repo.slug());
         }
     }
     
+    println!("    ✗ No suitable source code repository found for {}", language);
     Ok(None)
 }
 
-/// Processes Part C: Clone and inspect repositories for each language
-pub async fn process_repository_cloning(
+/// Clones the best repo for each language
+pub async fn clone_best_repos(
     language_reports: &[crate::app::LanguageReport],
     clone_base_dir: &Path,
 ) -> Result<(), AppError> {
@@ -200,9 +219,9 @@ pub async fn process_repository_cloning(
         println!("Processing {} repositories...", report.language);
         println!("{}", "=".repeat(50));
         
-        match find_best_source_code_repo(&report.repos, &report.language, clone_base_dir).await {
+        match find_best_code_repo(&report.repos, &report.language, clone_base_dir).await {
             Ok(Some((repo, analysis))) => {
-                println!("✓ Found best source code repository for {}: {}", 
+                println!("✓ Successfully cloned best source code repository for {}: {}", 
                     report.language, repo.slug());
                 println!("  - Stars: {}", repo.stargazers_count);
                 println!("  - Source files: {}", analysis.source_files);

@@ -20,21 +20,6 @@ impl TestGitService {
             issues: Vec::new(),
         }
     }
-
-    pub fn with_repos(mut self, repos: Vec<Repo>) -> Self {
-        self.repos = repos;
-        self
-    }
-
-    pub fn with_commits(mut self, commits: Vec<Commit>) -> Self {
-        self.commits = commits;
-        self
-    }
-
-    pub fn with_issues(mut self, issues: Vec<Issue>) -> Self {
-        self.issues = issues;
-        self
-    }
 }
 
 impl GitRepositoryService for TestGitService {
