@@ -7,6 +7,7 @@ use serde_json::Value;
 use crate::config::GitHubConfig;
 use crate::error::AppError;
 use crate::model::{Commit, Issue, Repo};
+use crate::service::traits::GitRepositoryService;
 use crate::util::json::json_error;
 
 /// Service wrapper around `reqwest::Client` tailored for GitHub REST API access.
@@ -235,6 +236,28 @@ impl GitService {
         let root: Value = serde_json::from_str(&body).map_err(AppError::from)?;
 
         Commit::from_json(&root)
+    }
+}
+
+impl GitRepositoryService for GitService {
+    async fn fetch_top_repositories(&self, language: &str, per_page: u8) -> Result<Vec<Repo>, AppError> {
+        self.fetch_top_repositories(language, per_page).await
+    }
+
+    async fn fetch_repo_forks(&self, owner: &str, repo: &str) -> Result<Vec<Repo>, AppError> {
+        self.fetch_repo_forks(owner, repo).await
+    }
+
+    async fn fetch_recent_commits(&self, owner: &str, repo: &str) -> Result<Vec<Commit>, AppError> {
+        self.fetch_recent_commits(owner, repo).await
+    }
+
+    async fn fetch_open_issues(&self, owner: &str, repo: &str) -> Result<Vec<Issue>, AppError> {
+        self.fetch_open_issues(owner, repo).await
+    }
+
+    async fn fetch_commit_with_files(&self, owner: &str, repo: &str, sha: &str) -> Result<Commit, AppError> {
+        self.fetch_commit_with_files(owner, repo, sha).await
     }
 }
 

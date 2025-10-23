@@ -6,6 +6,7 @@ use redis::AsyncCommands;
 use crate::config::RedisConfig;
 use crate::error::AppError;
 use crate::model::{Issue, Owner, Repo};
+use crate::service::traits::DataStorageService;
 
 /// Manages Redis connections and storage operations
 #[derive(Clone)]
@@ -102,36 +103,10 @@ impl RedisService {
 
         Ok(())
     }
-
-    /// Retrieves a repository from Redis
-    pub async fn get_repository(&mut self, owner: &str, name: &str) -> Result<Option<RepoData>, AppError> {
-        let key = format!("repo:{}:{}", owner, name);
-
-        let result: Option<(String, String, String, String, u64, u64, u64)> = self.client
-            .hget(&key, &["url", "name", "owner", "language", "stars", "forks", "open_issues"])
-            .await
-            .map_err(|e| AppError::Redis(format!("Failed to retrieve repo: {e}")))?;
-
-        Ok(result.map(|(url, name, owner, language, stars, forks, issues)| RepoData {
-            url,
-            name,
-            owner,
-            language,
-            stars,
-            forks,
-            open_issues: issues,
-        }))
-    }
 }
 
-/// Represents repository data retrieved from Redis
-#[derive(Debug, Clone)]
-pub struct RepoData {
-    pub url: String,
-    pub name: String,
-    pub owner: String,
-    pub language: String,
-    pub stars: u64,
-    pub forks: u64,
-    pub open_issues: u64,
+impl DataStorageService for RedisService {
+    async fn store_repository(&mut self, repo: &Repo) -> Result<(), AppError> {
+        self.store_repository(repo).await
+    }
 }
