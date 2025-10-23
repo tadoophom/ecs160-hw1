@@ -5,7 +5,7 @@ use crate::error::AppError;
 use std::collections::HashMap;
 
 use crate::model::Repo;
-use crate::service::GitService;
+use crate::service::{GitService, RedisService};
 
 pub mod clone;
 
@@ -35,6 +35,7 @@ pub struct RepoMetrics {
 pub async fn run() -> Result<(), AppError> {
     let config = AppConfig::load()?;
     let service = GitService::new(config.github.clone())?;
+    let mut redis = RedisService::new(config.redis.clone()).await?;
 
     println!("=== Part A: Fetching GitHub Repository Data ===\n");
 
@@ -65,6 +66,10 @@ pub async fn run() -> Result<(), AppError> {
     // Part C: Clone and inspect repositories
     let clone_base_dir = std::path::Path::new("./cloned_repos");
     clone::process_repository_cloning(&language_reports, clone_base_dir).await?;
+
+    // Part D: Store results in Redis
+    println!("\n=== Part D: Storing Results in Redis ===\n");
+    store_results_in_redis(&mut redis, &language_reports).await?;
 
     Ok(())
 }
@@ -273,4 +278,16 @@ fn compute_top_files(repo: &Repo) -> Vec<String> {
     let mut items: Vec<(String, i64)> = by_file.into_iter().collect();
     items.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
     items.into_iter().map(|(name, _)| name).take(3).collect()
+}
+
+async fn store_results_in_redis(
+    redis: &mut RedisService,
+    language_reports: &[LanguageReport],
+) -> Result<(), AppError> {
+    for report in language_reports {
+        for repo in &report.repos {
+            redis.store_repository(repo).await?;
+        }
+    }
+    Ok(())
 }

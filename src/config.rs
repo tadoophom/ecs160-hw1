@@ -29,6 +29,7 @@ impl ConfigSource for EnvSource {
 #[derive(Debug, Clone)]
 pub struct AppConfig {
     pub github: GitHubConfig,
+    pub redis: RedisConfig,
 }
 
 impl AppConfig {
@@ -42,6 +43,7 @@ impl AppConfig {
     pub fn from_source(source: &impl ConfigSource) -> Result<Self, AppError> {
         Ok(Self {
             github: GitHubConfig::from_source(source)?,
+            redis: RedisConfig::from_source(source)?,
         })
     }
 }
@@ -76,5 +78,22 @@ impl GitHubConfig {
     /// Convenience helper for consumers that require an authenticated token.
     pub fn require_token(&self) -> Result<&str, AppError> {
         self.token.as_deref().ok_or(AppError::MissingGitHubToken)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RedisConfig {
+    pub url: String,
+}
+
+impl RedisConfig {
+    const DEFAULT_REDIS_URL: &'static str = "redis://127.0.0.1:6379";
+
+    fn from_source(source: &impl ConfigSource) -> Result<Self, AppError> {
+        let url = source
+            .get("REDIS_URL")
+            .unwrap_or_else(|| Self::DEFAULT_REDIS_URL.to_string());
+
+        Ok(Self { url })
     }
 }

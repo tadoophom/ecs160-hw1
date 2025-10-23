@@ -21,6 +21,8 @@ pub enum AppError {
     GitHubApi(String),
     #[error("git operation error: {0}")]
     Git(String),
+    #[error("redis error: {0}")]
+    Redis(String),
     #[error("feature not implemented yet")]
     NotImplemented,
 }
