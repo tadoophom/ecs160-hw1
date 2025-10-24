@@ -90,9 +90,9 @@ fn create_test_issue(title: &str, state: &str) -> Issue {
 fn test_total_stars_single_repo() {
     let repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
     let repos = vec![repo];
-    
+
     let total_stars: u64 = repos.iter().map(|r| r.stargazers_count).sum();
-    
+
     assert_eq!(total_stars, 100);
 }
 
@@ -103,18 +103,18 @@ fn test_total_stars_multiple_repos() {
         create_test_repo("repo2", "owner2", 200, 10, 5),
         create_test_repo("repo3", "owner3", 50, 2, 1),
     ];
-    
+
     let total_stars: u64 = repos.iter().map(|r| r.stargazers_count).sum();
-    
+
     assert_eq!(total_stars, 350);
 }
 
 #[test]
 fn test_total_stars_empty_repos() {
     let repos: Vec<Repo> = Vec::new();
-    
+
     let total_stars: u64 = repos.iter().map(|r| r.stargazers_count).sum();
-    
+
     assert_eq!(total_stars, 0);
 }
 
@@ -124,9 +124,9 @@ fn test_total_stars_zero_stars() {
         create_test_repo("repo1", "owner1", 0, 5, 3),
         create_test_repo("repo2", "owner2", 0, 10, 5),
     ];
-    
+
     let total_stars: u64 = repos.iter().map(|r| r.stargazers_count).sum();
-    
+
     assert_eq!(total_stars, 0);
 }
 
@@ -138,9 +138,9 @@ fn test_total_stars_zero_stars() {
 fn test_total_forks_single_repo() {
     let repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
     let repos = vec![repo];
-    
+
     let total_forks: u64 = repos.iter().map(|r| r.forks_count).sum();
-    
+
     assert_eq!(total_forks, 5);
 }
 
@@ -151,18 +151,18 @@ fn test_total_forks_multiple_repos() {
         create_test_repo("repo2", "owner2", 200, 10, 5),
         create_test_repo("repo3", "owner3", 50, 15, 1),
     ];
-    
+
     let total_forks: u64 = repos.iter().map(|r| r.forks_count).sum();
-    
+
     assert_eq!(total_forks, 30);
 }
 
 #[test]
 fn test_total_forks_empty_repos() {
     let repos: Vec<Repo> = Vec::new();
-    
+
     let total_forks: u64 = repos.iter().map(|r| r.forks_count).sum();
-    
+
     assert_eq!(total_forks, 0);
 }
 
@@ -179,9 +179,9 @@ fn test_total_open_issues_single_repo() {
         create_test_issue("Issue 3", "open"),
     ];
     let repos = vec![repo];
-    
+
     let total_open_issues: usize = repos.iter().map(|r| r.issues.len()).sum();
-    
+
     assert_eq!(total_open_issues, 3);
 }
 
@@ -192,18 +192,18 @@ fn test_total_open_issues_multiple_repos() {
         create_test_issue("Issue 1", "open"),
         create_test_issue("Issue 2", "open"),
     ];
-    
+
     let mut repo2 = create_test_repo("repo2", "owner2", 200, 10, 0);
     repo2.issues = vec![
         create_test_issue("Issue 3", "open"),
         create_test_issue("Issue 4", "open"),
         create_test_issue("Issue 5", "open"),
     ];
-    
+
     let repos = vec![repo1, repo2];
-    
+
     let total_open_issues: usize = repos.iter().map(|r| r.issues.len()).sum();
-    
+
     assert_eq!(total_open_issues, 5);
 }
 
@@ -213,9 +213,9 @@ fn test_total_open_issues_no_issues() {
         create_test_repo("repo1", "owner1", 100, 5, 0),
         create_test_repo("repo2", "owner2", 200, 10, 0),
     ];
-    
+
     let total_open_issues: usize = repos.iter().map(|r| r.issues.len()).sum();
-    
+
     assert_eq!(total_open_issues, 0);
 }
 
@@ -227,12 +227,12 @@ fn test_total_open_issues_no_issues() {
 fn test_top_modified_files_single_file() {
     let files = vec![create_test_file("file1.rs", 10, 5, 15)];
     let commit = create_test_commit("abc123", files);
-    
+
     let mut repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
     repo.recent_commits = vec![commit];
-    
+
     let top_files = compute_top_modified_files(&repo);
-    
+
     assert_eq!(top_files.len(), 1);
     assert_eq!(top_files[0], "file1.rs");
 }
@@ -246,7 +246,7 @@ fn test_top_modified_files_multiple_commits() {
             create_test_file("file2.rs", 5, 2, 7),
         ],
     );
-    
+
     let commit2 = create_test_commit(
         "def456",
         vec![
@@ -254,12 +254,12 @@ fn test_top_modified_files_multiple_commits() {
             create_test_file("file3.rs", 8, 3, 11),
         ],
     );
-    
+
     let mut repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
     repo.recent_commits = vec![commit1, commit2];
-    
+
     let top_files = compute_top_modified_files(&repo);
-    
+
     // file1.rs should be first (15 + 30 = 45 changes)
     // file3.rs should be second (11 changes)
     // file2.rs should be third (7 changes)
@@ -281,12 +281,12 @@ fn test_top_modified_files_more_than_three() {
             create_test_file("file5.rs", 10, 2, 12),
         ],
     );
-    
+
     let mut repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
     repo.recent_commits = vec![commit];
-    
+
     let top_files = compute_top_modified_files(&repo);
-    
+
     // Should only return top 3
     assert_eq!(top_files.len(), 3);
     assert_eq!(top_files[0], "file1.rs");
@@ -297,9 +297,9 @@ fn test_top_modified_files_more_than_three() {
 #[test]
 fn test_top_modified_files_no_commits() {
     let repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
-    
+
     let top_files = compute_top_modified_files(&repo);
-    
+
     assert_eq!(top_files.len(), 0);
 }
 
@@ -310,12 +310,12 @@ fn test_top_modified_files_uses_additions_deletions_when_changes_zero() {
         create_test_file("file2.rs", 3, 2, 0),  // changes = 0, should use additions + deletions = 5
     ];
     let commit = create_test_commit("abc123", files);
-    
+
     let mut repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
     repo.recent_commits = vec![commit];
-    
+
     let top_files = compute_top_modified_files(&repo);
-    
+
     assert_eq!(top_files.len(), 2);
     assert_eq!(top_files[0], "file1.rs"); // 15 > 5
     assert_eq!(top_files[1], "file2.rs");
@@ -328,9 +328,9 @@ fn test_top_modified_files_uses_additions_deletions_when_changes_zero() {
 #[test]
 fn test_new_fork_commits_no_forks() {
     let repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
-    
+
     let new_commits = count_new_fork_commits(&repo);
-    
+
     assert_eq!(new_commits, 0);
 }
 
@@ -338,19 +338,19 @@ fn test_new_fork_commits_no_forks() {
 fn test_new_fork_commits_fork_with_new_commits() {
     let mut fork = create_test_repo("test-repo", "forker1", 0, 0, 0);
     fork.created_at = Some("2024-01-10T00:00:00Z".to_string());
-    
+
     // Create commits: one before fork, two after fork
     let commit1 = create_test_commit_with_date("abc123", "2024-01-05T00:00:00Z"); // Before fork
     let commit2 = create_test_commit_with_date("def456", "2024-01-15T00:00:00Z"); // After fork
     let commit3 = create_test_commit_with_date("ghi789", "2024-01-20T00:00:00Z"); // After fork
-    
+
     fork.recent_commits = vec![commit1, commit2, commit3];
-    
+
     let mut repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
     repo.forks = vec![fork];
-    
+
     let new_commits = count_new_fork_commits(&repo);
-    
+
     // Only commits after fork creation date should count
     assert_eq!(new_commits, 2);
 }
@@ -363,18 +363,18 @@ fn test_new_fork_commits_multiple_forks() {
         create_test_commit_with_date("abc123", "2024-01-15T00:00:00Z"), // After fork
         create_test_commit_with_date("def456", "2024-01-20T00:00:00Z"), // After fork
     ];
-    
+
     let mut fork2 = create_test_repo("test-repo", "forker2", 0, 0, 0);
     fork2.created_at = Some("2024-01-12T00:00:00Z".to_string());
     fork2.recent_commits = vec![
         create_test_commit_with_date("ghi789", "2024-01-18T00:00:00Z"), // After fork
     ];
-    
+
     let mut repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
     repo.forks = vec![fork1, fork2];
-    
+
     let new_commits = count_new_fork_commits(&repo);
-    
+
     assert_eq!(new_commits, 3); // 2 from fork1 + 1 from fork2
 }
 
@@ -382,15 +382,16 @@ fn test_new_fork_commits_multiple_forks() {
 fn test_new_fork_commits_fork_no_created_date() {
     let mut fork = create_test_repo("test-repo", "forker1", 0, 0, 0);
     fork.created_at = None; // No creation date
-    fork.recent_commits = vec![
-        create_test_commit_with_date("abc123", "2024-01-15T00:00:00Z"),
-    ];
-    
+    fork.recent_commits = vec![create_test_commit_with_date(
+        "abc123",
+        "2024-01-15T00:00:00Z",
+    )];
+
     let mut repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
     repo.forks = vec![fork];
-    
+
     let new_commits = count_new_fork_commits(&repo);
-    
+
     // Should return 0 when fork has no creation date
     assert_eq!(new_commits, 0);
 }
@@ -399,18 +400,18 @@ fn test_new_fork_commits_fork_no_created_date() {
 fn test_new_fork_commits_all_commits_before_fork() {
     let mut fork = create_test_repo("test-repo", "forker1", 0, 0, 0);
     fork.created_at = Some("2024-01-20T00:00:00Z".to_string());
-    
+
     // All commits before fork creation
     let commit1 = create_test_commit_with_date("abc123", "2024-01-05T00:00:00Z");
     let commit2 = create_test_commit_with_date("def456", "2024-01-10T00:00:00Z");
-    
+
     fork.recent_commits = vec![commit1, commit2];
-    
+
     let mut repo = create_test_repo("test-repo", "owner1", 100, 5, 3);
     repo.forks = vec![fork];
-    
+
     let new_commits = count_new_fork_commits(&repo);
-    
+
     assert_eq!(new_commits, 0);
 }
 
@@ -420,9 +421,9 @@ fn test_new_fork_commits_all_commits_before_fork() {
 
 fn compute_top_modified_files(repo: &Repo) -> Vec<String> {
     use std::collections::HashMap;
-    
+
     let mut by_file: HashMap<String, i64> = HashMap::new();
-    
+
     for commit in &repo.recent_commits {
         for file in &commit.files {
             let mut score = file.changes;
@@ -435,7 +436,7 @@ fn compute_top_modified_files(repo: &Repo) -> Vec<String> {
                 .or_insert(score);
         }
     }
-    
+
     let mut items: Vec<(String, i64)> = by_file.into_iter().collect();
     items.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
     items.into_iter().map(|(name, _)| name).take(3).collect()
@@ -448,7 +449,7 @@ fn count_new_fork_commits(repo: &Repo) -> usize {
             let Some(fork_created_at) = &fork.created_at else {
                 return 0;
             };
-            
+
             fork.recent_commits
                 .iter()
                 .filter(|commit| {
