@@ -1,5 +1,4 @@
-//! Service layer providing abstractions for external dependencies.
-//! Implements SOLID principles through trait-based design.
+//! Service layer.
 pub mod git_service;
 pub mod interfaces;
 pub mod redis_service;

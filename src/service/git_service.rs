@@ -1,5 +1,4 @@
-//! Implements the GitHub-facing service that handles HTTP calls and JSON parsing.
-//! Offers high-level methods the app can call without dealing with networking details.
+//! GitHub API service.
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT};
 use reqwest::{Client, Url};
 use serde_json::Value;

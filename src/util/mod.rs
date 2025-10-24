@@ -1,2 +1,2 @@
-//! Shared helper modules that support JSON parsing and other utility needs.
+//! Utilities.
 pub mod json;

@@ -1,5 +1,4 @@
-//! Integration-style tests that exercise the application workflow via mocks.
-//! They ensure the app layer composes the service and models correctly.
+//! App tests.
 use ecs160_hw1::app::collect_language_report;
 use ecs160_hw1::config::GitHubConfig;
 use ecs160_hw1::GitService;

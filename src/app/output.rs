@@ -1,5 +1,4 @@
-//! Output formatting and display logic.
-//! Handles formatting and display of language reports.
+//! Output formatting.
 
 use crate::app::LanguageReport;
 

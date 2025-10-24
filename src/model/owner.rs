@@ -1,5 +1,4 @@
-//! Represents repository owners and extracts identity fields from GitHub JSON.
-//! Keeps ownership metadata reusable throughout the model layer.
+//! Owner model.
 use serde_json::Value;
 
 use crate::error::AppError;

@@ -1,5 +1,4 @@
-//! Redis storage service for persisting repository data.
-//! Handles connection management and data storage operations for repositories, owners, and issues.
+//! Redis storage.
 use redis::aio::ConnectionManager;
 use redis::AsyncCommands;
 

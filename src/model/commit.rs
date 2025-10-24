@@ -1,5 +1,4 @@
-//! Represents Git commit payloads and related JSON parsing helpers.
-//! Tracks summary metadata plus file-level change details for analytics.
+//! Commit model.
 use serde_json::Value;
 
 use crate::error::AppError;

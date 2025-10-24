@@ -1,5 +1,4 @@
-//! Repository cloning and source code detection functionality.
-//! Implements Part C of the assignment: clone repositories and determine which contain actual source code.
+//! Repository cloning.
 
 use std::collections::HashSet;
 use std::path::Path;

@@ -1,5 +1,4 @@
-//! Service interfaces for different responsibilities.
-//! Each interface focuses on a specific task to avoid forcing clients to depend on unused methods.
+//! Service interfaces.
 
 use crate::error::AppError;
 use crate::model::{Commit, Issue, Repo};

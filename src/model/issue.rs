@@ -1,5 +1,4 @@
-//! Models GitHub issues and provides JSON deserialization helpers.
-//! Captures basic metadata needed for analytics and storage tasks.
+//! Issue model.
 use serde_json::Value;
 
 use crate::error::AppError;

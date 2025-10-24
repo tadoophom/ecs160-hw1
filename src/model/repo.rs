@@ -1,5 +1,4 @@
-//! Core repository model that carries nested data and API-derived metrics.
-//! Handles JSON extraction for counts, owner, and placeholder collections.
+//! Repository model.
 use serde_json::Value;
 
 use crate::error::AppError;

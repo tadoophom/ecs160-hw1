@@ -1,5 +1,4 @@
-//! Repository data fetching logic.
-//! Handles the workflow of fetching data from GitHub API.
+//! Repository fetching.
 
 use crate::error::AppError;
 use crate::model::Repo;

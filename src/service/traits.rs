@@ -1,5 +1,4 @@
-//! Service abstractions following Open/Closed Principle.
-//! Defines interfaces that can be extended without modifying existing code.
+//! Service traits.
 
 use crate::error::AppError;
 use crate::model::{Commit, Issue, Repo};

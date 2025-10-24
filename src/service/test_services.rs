@@ -1,5 +1,4 @@
-//! Test implementations for development and testing.
-//! These implementations can be substituted for real services without breaking functionality.
+//! Test services.
 
 use crate::error::AppError;
 use crate::model::{Commit, Issue, Repo};

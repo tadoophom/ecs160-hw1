@@ -1,5 +1,4 @@
-//! Statistics calculation and metrics computation.
-//! Handles calculation of repository metrics and language summaries.
+//! Statistics calculation.
 
 use crate::app::{LanguageReport, RepoMetrics};
 use crate::model::Repo;

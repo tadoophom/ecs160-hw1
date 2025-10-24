@@ -1,5 +1,4 @@
-//! Main application orchestrator that coordinates high-level workflow.
-//! Delegates specific responsibilities to specialized modules.
+//! Main application.
 
 use crate::config::AppConfig;
 use crate::error::AppError;

@@ -1,6 +1,4 @@
-//! Unit tests for Part B statistics computation.
-//! These tests ONLY work with data objects and make NO API calls.
-//! They verify the correctness of statistics calculations.
+//! Statistics tests.
 
 use ecs160_hw1::model::{Commit, CommitAuthor, CommitFile, CommitSummary, Issue, Owner, Repo};
 

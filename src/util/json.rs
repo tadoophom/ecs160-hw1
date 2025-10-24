@@ -1,5 +1,4 @@
-//! JSON parsing utilities used by model builders to keep conversion logic shared.
-//! Consolidates boilerplate for extracting typed values from `serde_json::Value`.
+//! JSON utilities.
 use serde_json::{Map, Value};
 
 use crate::error::AppError;

@@ -1,5 +1,4 @@
-//! Crate root exposing the application modules and shared exports.
-//! Provides shared helpers such as the GitHub service facade and result alias.
+//! Application modules.
 pub mod app;
 pub mod config;
 pub mod error;
