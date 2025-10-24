@@ -5,6 +5,15 @@ use crate::error::AppError;
 use crate::model::Repo;
 use crate::service::traits::GitRepositoryService;
 
+/// Number of top repositories to fetch per language
+const TOP_REPOSITORIES_COUNT: u8 = 10;
+
+/// Maximum number of commits to fetch detailed file information for
+const MAX_COMMITS_WITH_FILES: usize = 50;
+
+/// Maximum number of forks to process commits for
+const MAX_FORKS_TO_PROCESS: usize = 20;
+
 /// Orchestrates repository data fetching from any Git service
 pub struct RepoFetcher<'a, S: GitRepositoryService> {
     service: &'a S,
@@ -18,8 +27,8 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
 
     /// Fetches comprehensive data for repositories of a specific language
     pub async fn fetch_language_data(&self, language: &str) -> Result<Vec<Repo>, AppError> {
-        println!("  [1/4] Fetching top 10 repositories...");
-        let mut repos = self.service.fetch_top_repositories(language, 10).await?;
+        println!("  [1/4] Fetching top {} repositories...", TOP_REPOSITORIES_COUNT);
+        let mut repos = self.service.fetch_top_repositories(language, TOP_REPOSITORIES_COUNT).await?;
         println!("      ✓ Found {} repositories", repos.len());
 
         println!("  [2/4] Fetching commits and issues for each repository...");
@@ -48,8 +57,7 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
                     repo.commit_count = commits.len() as u64;
 
                     let mut detailed_commits = Vec::new();
-                    for commit in commits.iter().take(50) {
-                        // MAX_COMMITS_WITH_FILES
+                    for commit in commits.iter().take(MAX_COMMITS_WITH_FILES) {
                         match self
                             .service
                             .fetch_commit_with_files(&repo.owner.login, &repo.name, &commit.sha)
@@ -111,8 +119,7 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
     /// Enriches forks with commit data
     async fn enrich_forks_with_commits(&self, repos: &mut [Repo]) {
         for repo in repos.iter_mut() {
-            for fork in repo.forks.iter_mut().take(20) {
-                // MAX_FORKS_TO_PROCESS
+            for fork in repo.forks.iter_mut().take(MAX_FORKS_TO_PROCESS) {
                 match self
                     .service
                     .fetch_recent_commits(&fork.owner.login, &fork.name)
@@ -137,7 +144,7 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
                     "      ✓ {}: fetched commits for {}/{} forks",
                     repo.slug(),
                     forks_with_commits,
-                    repo.forks.len().min(20)
+                    repo.forks.len().min(MAX_FORKS_TO_PROCESS)
                 );
             }
         }
