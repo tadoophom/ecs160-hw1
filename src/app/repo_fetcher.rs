@@ -43,16 +43,19 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
         Ok(repos)
     }
 
-    /// Enriches repositories with commit and issue data
+    /// Enriches repositories with commit and issue data (concurrent per repo)
     async fn enrich_with_commits_and_issues(&self, repos: &mut [Repo]) {
         for repo in repos.iter_mut() {
-            // Fetch commits
-            match self
+            // Fetch commits and issues concurrently
+            let commits_future = self
                 .service
-                .fetch_recent_commits(&repo.owner.login, &repo.name)
-                .await
-            {
-                Ok(commits) => {
+                .fetch_recent_commits(&repo.owner.login, &repo.name);
+            let issues_future = self
+                .service
+                .fetch_open_issues(&repo.owner.login, &repo.name);
+
+            match tokio::join!(commits_future, issues_future) {
+                (Ok(commits), Ok(issues)) => {
                     println!("      ✓ {}: {} commits", repo.slug(), commits.len());
                     repo.commit_count = commits.len() as u64;
 
@@ -74,30 +77,20 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
                         }
                     }
                     repo.recent_commits = detailed_commits;
-                }
-                Err(e) => {
-                    eprintln!("      ✗ Failed to fetch commits for {}: {}", repo.slug(), e);
-                }
-            }
-
-            // Fetch issues
-            match self
-                .service
-                .fetch_open_issues(&repo.owner.login, &repo.name)
-                .await
-            {
-                Ok(issues) => {
                     repo.issues = issues;
                     println!("      ✓ {}: {} open issues", repo.slug(), repo.issues.len());
                 }
-                Err(e) => {
+                (Err(e), _) => {
+                    eprintln!("      ✗ Failed to fetch commits for {}: {}", repo.slug(), e);
+                }
+                (_, Err(e)) => {
                     eprintln!("      ✗ Failed to fetch issues for {}: {}", repo.slug(), e);
                 }
             }
         }
     }
 
-    /// Enriches repositories with fork data
+    /// Enriches repositories with fork data (in parallel)
     async fn enrich_with_forks(&self, repos: &mut [Repo]) {
         for repo in repos.iter_mut() {
             match self
@@ -116,15 +109,26 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
         }
     }
 
-    /// Enriches forks with commit data
+    /// Enriches forks with commit data (concurrent per repository)
     async fn enrich_forks_with_commits(&self, repos: &mut [Repo]) {
         for repo in repos.iter_mut() {
-            for fork in repo.forks.iter_mut().take(MAX_FORKS_TO_PROCESS) {
-                match self
-                    .service
-                    .fetch_recent_commits(&fork.owner.login, &fork.name)
-                    .await
-                {
+            let forks_to_process = repo.forks.len().min(MAX_FORKS_TO_PROCESS);
+            
+            // Prepare futures for all forks
+            let mut futures = Vec::new();
+            for fork in repo.forks.iter().take(MAX_FORKS_TO_PROCESS) {
+                futures.push(
+                    self.service
+                        .fetch_recent_commits(&fork.owner.login, &fork.name)
+                );
+            }
+
+            // Execute all futures concurrently
+            let results = futures::future::join_all(futures).await;
+
+            // Apply results back to forks
+            for (fork, result) in repo.forks.iter_mut().take(MAX_FORKS_TO_PROCESS).zip(results) {
+                match result {
                     Ok(commits) => {
                         fork.commit_count = commits.len() as u64;
                         fork.recent_commits = commits;
@@ -138,13 +142,14 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
                     }
                 }
             }
+
             let forks_with_commits = repo.forks.iter().filter(|f| f.commit_count > 0).count();
             if forks_with_commits > 0 {
                 println!(
                     "      ✓ {}: fetched commits for {}/{} forks",
                     repo.slug(),
                     forks_with_commits,
-                    repo.forks.len().min(MAX_FORKS_TO_PROCESS)
+                    forks_to_process
                 );
             }
         }
