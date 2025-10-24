@@ -6,14 +6,23 @@ use crate::model::{Commit, Issue, Repo};
 
 /// Interface for basic repository information retrieval
 pub trait RepoFetcher {
-    async fn fetch_top_repositories(&self, language: &str, per_page: u8) -> Result<Vec<Repo>, AppError>;
+    async fn fetch_top_repositories(
+        &self,
+        language: &str,
+        per_page: u8,
+    ) -> Result<Vec<Repo>, AppError>;
     async fn fetch_repo_forks(&self, owner: &str, repo: &str) -> Result<Vec<Repo>, AppError>;
 }
 
 /// Interface for commit-related operations
 pub trait CommitFetcher {
     async fn fetch_recent_commits(&self, owner: &str, repo: &str) -> Result<Vec<Commit>, AppError>;
-    async fn fetch_commit_with_files(&self, owner: &str, repo: &str, sha: &str) -> Result<Commit, AppError>;
+    async fn fetch_commit_with_files(
+        &self,
+        owner: &str,
+        repo: &str,
+        sha: &str,
+    ) -> Result<Commit, AppError>;
 }
 
 /// Interface for issue-related operations
@@ -34,4 +43,3 @@ pub trait StorageService: RepoStorage {}
 
 // Note: Individual trait implementations would be added here for specific services
 // For now, we'll use the simpler approach with the main traits module
-

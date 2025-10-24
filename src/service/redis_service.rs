@@ -83,7 +83,12 @@ impl RedisService {
     }
 
     /// Stores a single issue in Redis
-    async fn store_issue(&mut self, repo_id: i64, index: usize, issue: &Issue) -> Result<(), AppError> {
+    async fn store_issue(
+        &mut self,
+        repo_id: i64,
+        index: usize,
+        issue: &Issue,
+    ) -> Result<(), AppError> {
         let key = format!("issue:{}:{}", repo_id, index);
 
         self.client

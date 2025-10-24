@@ -1,9 +1,9 @@
 //! Statistics calculation and metrics computation.
 //! Handles calculation of repository metrics and language summaries.
 
-use std::collections::HashMap;
+use crate::app::{LanguageReport, RepoMetrics};
 use crate::model::Repo;
-use crate::app::{RepoMetrics, LanguageReport};
+use std::collections::HashMap;
 
 /// Statistics calculator for repository data
 pub struct StatsCalculator;
@@ -16,7 +16,7 @@ impl StatsCalculator {
 
         for repo in repos {
             let top_files = Self::get_top_files(repo);
-            
+
             // Count only NEW commits (made after fork creation)
             let new_fork_commits: usize = repo
                 .forks
@@ -24,7 +24,7 @@ impl StatsCalculator {
                 .take(20) // MAX_FORKS_TO_PROCESS
                 .map(|fork| Self::count_new_commits(fork))
                 .sum();
-            
+
             fork_commit_total += new_fork_commits;
 
             metrics.push(RepoMetrics {

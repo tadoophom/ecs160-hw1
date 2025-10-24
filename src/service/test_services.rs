@@ -3,7 +3,7 @@
 
 use crate::error::AppError;
 use crate::model::{Commit, Issue, Repo};
-use crate::service::traits::{GitRepositoryService, DataStorageService};
+use crate::service::traits::{DataStorageService, GitRepositoryService};
 
 /// Test Git service for development and testing
 pub struct TestGitService {
@@ -23,7 +23,11 @@ impl TestGitService {
 }
 
 impl GitRepositoryService for TestGitService {
-    async fn fetch_top_repositories(&self, _language: &str, per_page: u8) -> Result<Vec<Repo>, AppError> {
+    async fn fetch_top_repositories(
+        &self,
+        _language: &str,
+        per_page: u8,
+    ) -> Result<Vec<Repo>, AppError> {
         Ok(self.repos.iter().take(per_page as usize).cloned().collect())
     }
 
@@ -31,7 +35,11 @@ impl GitRepositoryService for TestGitService {
         Ok(Vec::new()) // Test returns empty forks
     }
 
-    async fn fetch_recent_commits(&self, _owner: &str, _repo: &str) -> Result<Vec<Commit>, AppError> {
+    async fn fetch_recent_commits(
+        &self,
+        _owner: &str,
+        _repo: &str,
+    ) -> Result<Vec<Commit>, AppError> {
         Ok(self.commits.clone())
     }
 
@@ -39,8 +47,14 @@ impl GitRepositoryService for TestGitService {
         Ok(self.issues.clone())
     }
 
-    async fn fetch_commit_with_files(&self, _owner: &str, _repo: &str, _sha: &str) -> Result<Commit, AppError> {
-        self.commits.first()
+    async fn fetch_commit_with_files(
+        &self,
+        _owner: &str,
+        _repo: &str,
+        _sha: &str,
+    ) -> Result<Commit, AppError> {
+        self.commits
+            .first()
             .cloned()
             .ok_or_else(|| AppError::Config("No commits available".to_string()))
     }

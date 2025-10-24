@@ -1,6 +1,6 @@
 //! Implements the GitHub-facing service that handles HTTP calls and JSON parsing.
 //! Offers high-level methods the app can call without dealing with networking details.
-use reqwest::header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue, USER_AGENT};
+use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT};
 use reqwest::{Client, Url};
 use serde_json::Value;
 
@@ -240,7 +240,11 @@ impl GitService {
 }
 
 impl GitRepositoryService for GitService {
-    async fn fetch_top_repositories(&self, language: &str, per_page: u8) -> Result<Vec<Repo>, AppError> {
+    async fn fetch_top_repositories(
+        &self,
+        language: &str,
+        per_page: u8,
+    ) -> Result<Vec<Repo>, AppError> {
         self.fetch_top_repositories(language, per_page).await
     }
 
@@ -256,7 +260,12 @@ impl GitRepositoryService for GitService {
         self.fetch_open_issues(owner, repo).await
     }
 
-    async fn fetch_commit_with_files(&self, owner: &str, repo: &str, sha: &str) -> Result<Commit, AppError> {
+    async fn fetch_commit_with_files(
+        &self,
+        owner: &str,
+        repo: &str,
+        sha: &str,
+    ) -> Result<Commit, AppError> {
         self.fetch_commit_with_files(owner, repo, sha).await
     }
 }

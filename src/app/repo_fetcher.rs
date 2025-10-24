@@ -38,17 +38,20 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
     async fn enrich_with_commits_and_issues(&self, repos: &mut [Repo]) {
         for repo in repos.iter_mut() {
             // Fetch commits
-            match self.service
+            match self
+                .service
                 .fetch_recent_commits(&repo.owner.login, &repo.name)
                 .await
             {
                 Ok(commits) => {
                     println!("      ✓ {}: {} commits", repo.slug(), commits.len());
                     repo.commit_count = commits.len() as u64;
-                    
+
                     let mut detailed_commits = Vec::new();
-                    for commit in commits.iter().take(50) { // MAX_COMMITS_WITH_FILES
-                        match self.service
+                    for commit in commits.iter().take(50) {
+                        // MAX_COMMITS_WITH_FILES
+                        match self
+                            .service
                             .fetch_commit_with_files(&repo.owner.login, &repo.name, &commit.sha)
                             .await
                         {
@@ -70,7 +73,8 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
             }
 
             // Fetch issues
-            match self.service
+            match self
+                .service
                 .fetch_open_issues(&repo.owner.login, &repo.name)
                 .await
             {
@@ -88,7 +92,8 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
     /// Enriches repositories with fork data
     async fn enrich_with_forks(&self, repos: &mut [Repo]) {
         for repo in repos.iter_mut() {
-            match self.service
+            match self
+                .service
                 .fetch_repo_forks(&repo.owner.login, &repo.name)
                 .await
             {
@@ -106,8 +111,10 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
     /// Enriches forks with commit data
     async fn enrich_forks_with_commits(&self, repos: &mut [Repo]) {
         for repo in repos.iter_mut() {
-            for fork in repo.forks.iter_mut().take(20) { // MAX_FORKS_TO_PROCESS
-                match self.service
+            for fork in repo.forks.iter_mut().take(20) {
+                // MAX_FORKS_TO_PROCESS
+                match self
+                    .service
                     .fetch_recent_commits(&fork.owner.login, &fork.name)
                     .await
                 {

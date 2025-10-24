@@ -1,8 +1,8 @@
 //! Integration-style tests that exercise the application workflow via mocks.
 //! They ensure the app layer composes the service and models correctly.
-use ecs160_hw1::GitService;
 use ecs160_hw1::app::collect_language_report;
 use ecs160_hw1::config::GitHubConfig;
+use ecs160_hw1::GitService;
 use httpmock::prelude::*;
 use serde_json::json;
 
@@ -358,11 +358,9 @@ async fn collect_language_report_handles_fork_errors() {
     assert!(report.repos[0].forks.is_empty());
     assert_eq!(report.new_fork_commits, 0);
     assert_eq!(report.repo_metrics.len(), 1);
-    assert!(
-        report.repo_metrics[0]
-            .top_files
-            .contains(&"src/main.rs".to_string())
-    );
+    assert!(report.repo_metrics[0]
+        .top_files
+        .contains(&"src/main.rs".to_string()));
 
     search_mock.assert();
     commits_mock.assert();

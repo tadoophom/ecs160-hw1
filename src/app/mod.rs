@@ -7,13 +7,13 @@ use crate::model::Repo;
 use crate::service::{GitService, RedisService};
 
 pub mod clone;
+pub mod output;
 pub mod repo_fetcher;
 pub mod stats;
-pub mod output;
 
+use output::OutputFormatter;
 use repo_fetcher::RepoFetcher;
 use stats::StatsCalculator;
-use output::OutputFormatter;
 
 const TARGET_LANGUAGES: &[&str] = &["Java", "C", "C++", "Rust"];
 
@@ -55,7 +55,7 @@ pub async fn run() -> Result<(), AppError> {
                     report.repos.len(),
                     language
                 );
-                        OutputFormatter::print_summary(&report);
+                OutputFormatter::print_summary(&report);
                 language_reports.push(report);
             }
             Err(err) => {
