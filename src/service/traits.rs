@@ -6,6 +6,7 @@ use crate::model::{Commit, Issue, Repo};
 
 /// Abstract interface for Git repository services
 /// Allows extension to different Git providers (GitHub, GitLab, etc.)
+#[allow(async_fn_in_trait)]
 pub trait GitRepositoryService {
     async fn fetch_top_repositories(
         &self,
@@ -25,6 +26,7 @@ pub trait GitRepositoryService {
 
 /// Abstract interface for data storage services
 /// Allows extension to different storage backends (Redis, PostgreSQL, etc.)
+#[allow(async_fn_in_trait)]
 pub trait DataStorageService {
     async fn store_repository(&mut self, repo: &Repo) -> Result<(), AppError>;
 }

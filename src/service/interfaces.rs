@@ -5,6 +5,7 @@ use crate::error::AppError;
 use crate::model::{Commit, Issue, Repo};
 
 /// Interface for basic repository information retrieval
+#[allow(async_fn_in_trait)]
 pub trait RepoFetcher {
     async fn fetch_top_repositories(
         &self,
@@ -15,6 +16,7 @@ pub trait RepoFetcher {
 }
 
 /// Interface for commit-related operations
+#[allow(async_fn_in_trait)]
 pub trait CommitFetcher {
     async fn fetch_recent_commits(&self, owner: &str, repo: &str) -> Result<Vec<Commit>, AppError>;
     async fn fetch_commit_with_files(
@@ -26,11 +28,13 @@ pub trait CommitFetcher {
 }
 
 /// Interface for issue-related operations
+#[allow(async_fn_in_trait)]
 pub trait IssueFetcher {
     async fn fetch_open_issues(&self, owner: &str, repo: &str) -> Result<Vec<Issue>, AppError>;
 }
 
 /// Interface for basic repository storage operations
+#[allow(async_fn_in_trait)]
 pub trait RepoStorage {
     async fn store_repository(&mut self, repo: &Repo) -> Result<(), AppError>;
 }

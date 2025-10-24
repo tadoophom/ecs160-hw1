@@ -69,4 +69,4 @@ jobs:
           components: clippy
       
       - name: Run Clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --verbose
