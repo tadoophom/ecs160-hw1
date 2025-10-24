@@ -27,8 +27,14 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
 
     /// Fetches comprehensive data for repositories of a specific language
     pub async fn fetch_language_data(&self, language: &str) -> Result<Vec<Repo>, AppError> {
-        println!("  [1/4] Fetching top {} repositories...", TOP_REPOSITORIES_COUNT);
-        let mut repos = self.service.fetch_top_repositories(language, TOP_REPOSITORIES_COUNT).await?;
+        println!(
+            "  [1/4] Fetching top {} repositories...",
+            TOP_REPOSITORIES_COUNT
+        );
+        let mut repos = self
+            .service
+            .fetch_top_repositories(language, TOP_REPOSITORIES_COUNT)
+            .await?;
         println!("      ✓ Found {} repositories", repos.len());
 
         println!("  [2/4] Fetching commits and issues for each repository...");
@@ -113,13 +119,13 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
     async fn enrich_forks_with_commits(&self, repos: &mut [Repo]) {
         for repo in repos.iter_mut() {
             let forks_to_process = repo.forks.len().min(MAX_FORKS_TO_PROCESS);
-            
+
             // Prepare futures for all forks
             let mut futures = Vec::new();
             for fork in repo.forks.iter().take(MAX_FORKS_TO_PROCESS) {
                 futures.push(
                     self.service
-                        .fetch_recent_commits(&fork.owner.login, &fork.name)
+                        .fetch_recent_commits(&fork.owner.login, &fork.name),
                 );
             }
 
@@ -127,7 +133,12 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
             let results = futures::future::join_all(futures).await;
 
             // Apply results back to forks
-            for (fork, result) in repo.forks.iter_mut().take(MAX_FORKS_TO_PROCESS).zip(results) {
+            for (fork, result) in repo
+                .forks
+                .iter_mut()
+                .take(MAX_FORKS_TO_PROCESS)
+                .zip(results)
+            {
                 match result {
                     Ok(commits) => {
                         fork.commit_count = commits.len() as u64;
