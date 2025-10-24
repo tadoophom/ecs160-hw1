@@ -8,14 +8,12 @@ use crate::error::AppError;
 use crate::model::{Issue, Owner, Repo};
 use crate::service::traits::DataStorageService;
 
-/// Manages Redis connections and storage operations
 #[derive(Clone)]
 pub struct RedisService {
     client: ConnectionManager,
 }
 
 impl RedisService {
-    /// Creates a new Redis service with connection pool
     pub async fn new(config: RedisConfig) -> Result<Self, AppError> {
         let redis_client = redis::Client::open(config.url.as_str())
             .map_err(|e| AppError::Redis(format!("Failed to create Redis client: {e}")))?;
@@ -27,13 +25,9 @@ impl RedisService {
         Ok(Self { client })
     }
 
-    /// Stores a single repository in Redis
-    /// Uses format: repo:{owner}/{name} for repository data,
-    /// author:{login} for owner data, and issue:{repo_id}:{issue_index} for issues
     pub async fn store_repository(&mut self, repo: &Repo) -> Result<(), AppError> {
         let repo_key = format!("repo:{}:{}", repo.owner.login, repo.name);
 
-        // Store repository metadata
         self.client
             .hset_multiple::<_, _, _, ()>(
                 &repo_key,
@@ -51,10 +45,8 @@ impl RedisService {
             .await
             .map_err(|e| AppError::Redis(format!("Failed to store repo: {e}")))?;
 
-        // Store owner/author data
         self.store_owner(&repo.owner).await?;
 
-        // Store all issues for this repository
         for (idx, issue) in repo.issues.iter().enumerate() {
             self.store_issue(repo.id, idx, issue).await?;
         }
@@ -62,7 +54,6 @@ impl RedisService {
         Ok(())
     }
 
-    /// Stores owner/author information in Redis
     async fn store_owner(&mut self, owner: &Owner) -> Result<(), AppError> {
         let key = format!("author:{}", owner.login);
 

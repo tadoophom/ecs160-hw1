@@ -4,7 +4,6 @@ use std::io;
 
 use thiserror::Error;
 
-/// Top-level error type used across the application layers.
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error("configuration error: {0}")]

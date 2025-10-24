@@ -9,7 +9,6 @@ use std::collections::HashMap;
 pub struct StatsCalculator;
 
 impl StatsCalculator {
-    /// Calculates repository metrics including top files and commit counts
     pub fn calculate_repo_stats(repos: &[Repo]) -> (Vec<RepoMetrics>, usize) {
         let mut metrics = Vec::with_capacity(repos.len());
         let mut fork_commit_total = 0usize;
@@ -17,11 +16,10 @@ impl StatsCalculator {
         for repo in repos {
             let top_files = Self::get_top_files(repo);
 
-            // Count only NEW commits (made after fork creation)
             let new_fork_commits: usize = repo
                 .forks
                 .iter()
-                .take(20) // MAX_FORKS_TO_PROCESS
+                .take(20) 
                 .map(|fork| Self::count_new_commits(fork))
                 .sum();
 
@@ -36,16 +34,14 @@ impl StatsCalculator {
         (metrics, fork_commit_total)
     }
 
-    /// Counts commits made after fork creation
     fn count_new_commits(fork: &Repo) -> usize {
         let Some(fork_created_at) = &fork.created_at else {
-            return 0; // Can't determine new commits without fork creation date
+            return 0; 
         };
 
         fork.recent_commits
             .iter()
             .filter(|commit| {
-                // Check if commit was made AFTER the fork was created
                 commit
                     .commit
                     .author
@@ -57,7 +53,6 @@ impl StatsCalculator {
             .count()
     }
 
-    /// Gets the top 3 most modified files in a repository
     fn get_top_files(repo: &Repo) -> Vec<String> {
         let mut by_file: HashMap<String, i64> = HashMap::new();
 
@@ -79,7 +74,6 @@ impl StatsCalculator {
         items.into_iter().map(|(name, _)| name).take(3).collect()
     }
 
-    /// Creates a language report from repositories
     pub fn build_language_report(language: &str, repos: Vec<Repo>) -> LanguageReport {
         let total_stars: u64 = repos.iter().map(|r| r.stargazers_count).sum();
         let total_forks: u64 = repos.iter().map(|r| r.forks_count).sum();

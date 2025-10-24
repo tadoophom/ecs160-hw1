@@ -4,7 +4,6 @@
 use crate::error::AppError;
 use crate::model::{Commit, Issue, Repo};
 
-/// Interface for basic repository information retrieval
 #[allow(async_fn_in_trait)]
 pub trait RepoFetcher {
     async fn fetch_top_repositories(
@@ -15,7 +14,6 @@ pub trait RepoFetcher {
     async fn fetch_repo_forks(&self, owner: &str, repo: &str) -> Result<Vec<Repo>, AppError>;
 }
 
-/// Interface for commit-related operations
 #[allow(async_fn_in_trait)]
 pub trait CommitFetcher {
     async fn fetch_recent_commits(&self, owner: &str, repo: &str) -> Result<Vec<Commit>, AppError>;
@@ -27,23 +25,17 @@ pub trait CommitFetcher {
     ) -> Result<Commit, AppError>;
 }
 
-/// Interface for issue-related operations
 #[allow(async_fn_in_trait)]
 pub trait IssueFetcher {
     async fn fetch_open_issues(&self, owner: &str, repo: &str) -> Result<Vec<Issue>, AppError>;
 }
 
-/// Interface for basic repository storage operations
 #[allow(async_fn_in_trait)]
 pub trait RepoStorage {
     async fn store_repository(&mut self, repo: &Repo) -> Result<(), AppError>;
 }
 
-/// Complete Git service interface combining all fetching capabilities
 pub trait GitService: RepoFetcher + CommitFetcher + IssueFetcher {}
 
-/// Complete storage service interface
 pub trait StorageService: RepoStorage {}
 
-// Note: Individual trait implementations would be added here for specific services
-// For now, we'll use the simpler approach with the main traits module

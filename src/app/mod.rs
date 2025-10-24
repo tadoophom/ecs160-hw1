@@ -66,11 +66,11 @@ pub async fn run() -> Result<(), AppError> {
         println!();
     }
 
-    // Part C: Clone and inspect repositories
+    // C: Clone and inspect repositories
     let clone_base_dir = std::path::Path::new("./cloned_repos");
     clone::clone_best_repos(&language_reports, clone_base_dir).await?;
 
-    // Part D: Store results in Redis
+    // D: Store results in Redis
     println!("\n=== Part D: Storing Results in Redis ===\n");
     store_results_in_redis(&mut redis, &language_reports).await?;
 

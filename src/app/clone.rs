@@ -11,7 +11,7 @@ use crate::model::Repo;
 /// Rules to determine if a repository contains actual source code vs tutorials/documentation
 #[derive(Debug, Clone)]
 pub struct CodeDetectionRules {
-    /// File extensions that indicate source code
+    /// extensions that indicate source code
     pub source_extensions: HashSet<String>,
     /// Minimum ratio of source files to total files to consider it a code repo
     pub min_source_ratio: f64,
@@ -71,7 +71,6 @@ pub fn check_for_source_code(
     let mut total_files = 0;
     let mut file_extensions: HashSet<String> = HashSet::new();
 
-    // Walk through the repository directory recursively
     if let Ok(entries) = walkdir::WalkDir::new(repo_path)
         .max_depth(3) // Limit depth to avoid going too deep into large repos
         .into_iter()
@@ -121,18 +120,15 @@ pub struct CodeAnalysis {
     pub file_extensions: Vec<String>,
 }
 
-/// Clones a repository to a local directory
 pub async fn clone_repository(repo: &Repo, clone_dir: &Path) -> Result<(), AppError> {
     let clone_url = format!("https://github.com/{}.git", repo.slug());
 
     println!("  Cloning {} to {:?}...", repo.slug(), clone_dir);
 
-    // Create parent directory if it doesn't exist
     if let Some(parent) = clone_dir.parent() {
         std::fs::create_dir_all(parent).map_err(AppError::from)?;
     }
 
-    // Clone with --depth 1 to only get the latest commit
     let output = Command::new("git")
         .args(&[
             "clone",
@@ -162,7 +158,6 @@ pub async fn clone_repository(repo: &Repo, clone_dir: &Path) -> Result<(), AppEr
     Ok(())
 }
 
-/// Clones a repo and checks if it has real code
 async fn clone_and_check_repo(
     repo: &Repo,
     clone_dir: &Path,
@@ -196,7 +191,6 @@ async fn clone_and_check_repo(
         Err(e) => eprintln!("    ⚠ Failed to analyze {}: {}", repo.slug(), e),
     }
 
-    // Clean up the cloned directory only if it's not suitable
     if let Err(e) = std::fs::remove_dir_all(clone_dir) {
         eprintln!("    ⚠ Failed to clean up {}: {}", clone_dir.display(), e);
     }
@@ -204,7 +198,6 @@ async fn clone_and_check_repo(
     Ok(None)
 }
 
-/// Finds the most popular repo with real code for a language
 pub async fn find_best_code_repo(
     repos: &[Repo],
     language: &str,
@@ -217,8 +210,6 @@ pub async fn find_best_code_repo(
         repos.len()
     );
 
-    // Since repos are already sorted by stars in descending order,
-    // we check from most popular to least popular
     for (i, repo) in repos.iter().enumerate() {
         println!(
             "    [{}/{}] Checking {} ({} stars)...",
@@ -259,7 +250,6 @@ pub async fn find_best_code_repo(
     Ok(None)
 }
 
-/// Clones the best repo for each language
 pub async fn clone_best_repos(
     language_reports: &[crate::app::LanguageReport],
     clone_base_dir: &Path,

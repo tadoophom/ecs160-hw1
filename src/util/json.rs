@@ -34,7 +34,6 @@ where
         .and_then(|v| extractor(v).ok_or_else(|| json_error(format!("`{field}` has invalid type"))))
 }
 
-// Generic extractor for optional values with type conversion
 fn extract_optional<T, F>(map: &Map<String, Value>, field: &str, extractor: F) -> Option<T>
 where
     F: Fn(&Value) -> Option<T>,

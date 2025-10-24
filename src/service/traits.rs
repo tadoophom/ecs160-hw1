@@ -4,7 +4,6 @@
 use crate::error::AppError;
 use crate::model::{Commit, Issue, Repo};
 
-/// Abstract interface for Git repository services
 /// Allows extension to different Git providers (GitHub, GitLab, etc.)
 #[allow(async_fn_in_trait)]
 pub trait GitRepositoryService {
@@ -24,14 +23,12 @@ pub trait GitRepositoryService {
     ) -> Result<Commit, AppError>;
 }
 
-/// Abstract interface for data storage services
-/// Allows extension to different storage backends (Redis, PostgreSQL, etc.)
+
 #[allow(async_fn_in_trait)]
 pub trait DataStorageService {
     async fn store_repository(&mut self, repo: &Repo) -> Result<(), AppError>;
 }
 
-/// Represents repository data retrieved from storage
 #[derive(Debug, Clone)]
 pub struct RepoData {
     pub url: String,

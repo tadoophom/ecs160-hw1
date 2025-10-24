@@ -5,7 +5,6 @@ use crate::error::AppError;
 use crate::model::{Commit, Issue, Repo};
 use crate::service::traits::{DataStorageService, GitRepositoryService};
 
-/// Test Git service for development and testing
 pub struct TestGitService {
     pub repos: Vec<Repo>,
     pub commits: Vec<Commit>,
@@ -32,7 +31,7 @@ impl GitRepositoryService for TestGitService {
     }
 
     async fn fetch_repo_forks(&self, _owner: &str, _repo: &str) -> Result<Vec<Repo>, AppError> {
-        Ok(Vec::new()) // Test returns empty forks
+        Ok(Vec::new()) 
     }
 
     async fn fetch_recent_commits(
@@ -60,7 +59,6 @@ impl GitRepositoryService for TestGitService {
     }
 }
 
-/// Test storage service for development and testing
 pub struct TestStorageService {
     pub stored_repos: std::collections::HashMap<String, ()>,
 }

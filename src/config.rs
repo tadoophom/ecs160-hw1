@@ -4,12 +4,10 @@ use std::env;
 
 use crate::error::AppError;
 
-/// Abstraction over configuration sources (environment, tests, etc.).
 pub trait ConfigSource {
     fn get(&self, key: &str) -> Option<String>;
 }
 
-/// Reads key/value pairs from the current process environment.
 #[derive(Debug, Default)]
 pub struct EnvSource;
 
@@ -33,7 +31,6 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    /// Loads configuration using the default environment-backed source.
     pub fn load() -> Result<Self, AppError> {
         let source = EnvSource::with_dotenv();
         Self::from_source(&source)

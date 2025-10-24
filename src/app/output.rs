@@ -3,11 +3,9 @@
 
 use crate::app::LanguageReport;
 
-/// Handles presentation and formatting of language reports
 pub struct OutputFormatter;
 
 impl OutputFormatter {
-    /// Prints a formatted summary of a language report
     pub fn print_summary(report: &LanguageReport) {
         println!("Language: {}", report.language);
         println!("Total stars: {}", report.total_stars);

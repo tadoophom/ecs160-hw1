@@ -10,4 +10,3 @@ pub use git_service::GitService;
 pub use redis_service::RedisService;
 pub use test_services::{TestGitService, TestStorageService};
 pub use traits::*;
-// Note: interfaces provides additional specialized interfaces

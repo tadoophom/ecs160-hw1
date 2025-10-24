@@ -5,16 +5,15 @@ use crate::error::AppError;
 use crate::model::Repo;
 use crate::service::traits::GitRepositoryService;
 
-/// Number of top repositories to fetch per language
+/// # top repositories to fetch per language
 const TOP_REPOSITORIES_COUNT: u8 = 10;
 
-/// Maximum number of commits to fetch detailed file information for
+/// max # of commits to fetch detailed file information for
 const MAX_COMMITS_WITH_FILES: usize = 50;
 
-/// Maximum number of forks to process commits for
+/// max # of forks to process commits for
 const MAX_FORKS_TO_PROCESS: usize = 20;
 
-/// Orchestrates repository data fetching from any Git service
 pub struct RepoFetcher<'a, S: GitRepositoryService> {
     service: &'a S,
 }
@@ -120,7 +119,6 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
         for repo in repos.iter_mut() {
             let forks_to_process = repo.forks.len().min(MAX_FORKS_TO_PROCESS);
 
-            // Prepare futures for all forks
             let mut futures = Vec::new();
             for fork in repo.forks.iter().take(MAX_FORKS_TO_PROCESS) {
                 futures.push(
@@ -129,10 +127,8 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
                 );
             }
 
-            // Execute all futures concurrently
             let results = futures::future::join_all(futures).await;
 
-            // Apply results back to forks
             for (fork, result) in repo
                 .forks
                 .iter_mut()

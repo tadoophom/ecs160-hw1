@@ -10,7 +10,6 @@ use crate::model::{Commit, Issue, Repo};
 use crate::service::traits::GitRepositoryService;
 use crate::util::json::json_error;
 
-/// Service wrapper around `reqwest::Client` tailored for GitHub REST API access.
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct GitService {
@@ -19,7 +18,6 @@ pub struct GitService {
 }
 
 impl GitService {
-    /// Builds a new service instance using the provided configuration.
     pub fn new(config: GitHubConfig) -> Result<Self, AppError> {
         let http = Client::builder()
             .default_headers(Self::default_headers(&config)?)
@@ -56,7 +54,6 @@ impl GitService {
         Ok(headers)
     }
 
-    /// Fetches the most popular repositories for a language via the GitHub Search API.
     pub async fn fetch_top_repositories(
         &self,
         language: &str,
@@ -100,7 +97,6 @@ impl GitService {
             .collect::<Result<Vec<_>, _>>()
     }
 
-    /// Fetches forks for a repository.
     pub async fn fetch_repo_forks(&self, owner: &str, repo: &str) -> Result<Vec<Repo>, AppError> {
         let base_url = Url::parse(&self.config.api_base)
             .map_err(|err| AppError::Config(format!("invalid GitHub API base url: {err}")))?;
@@ -137,7 +133,6 @@ impl GitService {
             .collect::<Result<Vec<_>, _>>()
     }
 
-    /// Fetches recent commits for a repository.
     pub async fn fetch_recent_commits(
         &self,
         owner: &str,
@@ -174,7 +169,6 @@ impl GitService {
             .collect::<Result<Vec<_>, _>>()
     }
 
-    /// Fetches open issues for a repository.
     pub async fn fetch_open_issues(&self, owner: &str, repo: &str) -> Result<Vec<Issue>, AppError> {
         let base_url = Url::parse(&self.config.api_base)
             .map_err(|err| AppError::Config(format!("invalid GitHub API base url: {err}")))?;
@@ -211,7 +205,6 @@ impl GitService {
             .collect::<Result<Vec<_>, _>>()
     }
 
-    /// Fetches a single commit with complete file details
     pub async fn fetch_commit_with_files(
         &self,
         owner: &str,
