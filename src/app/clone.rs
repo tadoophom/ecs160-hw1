@@ -272,7 +272,14 @@ pub async fn clone_best_repos(
         println!("Processing {} repositories...", report.language);
         println!("{}", "=".repeat(50));
 
-        match find_best_code_repo(&report.repos, &report.language, clone_base_dir, min_source_ratio).await {
+        match find_best_code_repo(
+            &report.repos,
+            &report.language,
+            clone_base_dir,
+            min_source_ratio,
+        )
+        .await
+        {
             Ok(Some((repo, analysis))) => {
                 println!(
                     "✓ Successfully cloned best source code repository for {}: {}",

@@ -38,7 +38,7 @@ impl StatsCalculator {
 
     fn count_new_commits(fork: &Repo) -> usize {
         let Some(fork_created_at) = &fork.created_at else {
-            return 0; 
+            return 0;
         };
 
         fork.recent_commits

@@ -67,7 +67,12 @@ pub async fn run() -> Result<(), AppError> {
 
     // Part C: Clone and inspect repositories
     let clone_base_dir = std::path::Path::new("./cloned_repos");
-    let cloned_repos = clone::clone_best_repos(&language_reports, clone_base_dir, config.clone.min_source_ratio).await?;
+    let cloned_repos = clone::clone_best_repos(
+        &language_reports,
+        clone_base_dir,
+        config.clone.min_source_ratio,
+    )
+    .await?;
 
     // Part D: Store results in Redis (only store the cloned repos, not all 10)
     println!("\n=== Part D: Storing Results in Redis ===\n");
@@ -95,18 +100,22 @@ async fn store_cloned_repos_in_redis(
         return Ok(());
     }
 
-    println!("  Storing {} most popular source code repositories...", cloned_repos.len());
-    
+    println!(
+        "  Storing {} most popular source code repositories...",
+        cloned_repos.len()
+    );
+
     for repo in cloned_repos {
         redis.store_repository(repo).await?;
         println!(
             "    ✓ Stored {}/{} ({} stars)",
-            repo.owner.login,
-            repo.name,
-            repo.stargazers_count
+            repo.owner.login, repo.name, repo.stargazers_count
         );
     }
-    
-    println!("\n✓ Successfully stored {} repositories in Redis", cloned_repos.len());
+
+    println!(
+        "\n✓ Successfully stored {} repositories in Redis",
+        cloned_repos.len()
+    );
     Ok(())
 }

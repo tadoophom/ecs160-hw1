@@ -37,4 +37,3 @@ pub trait RepoStorage {
 pub trait GitService: RepoFetcher + CommitFetcher + IssueFetcher {}
 
 pub trait StorageService: RepoStorage {}
-

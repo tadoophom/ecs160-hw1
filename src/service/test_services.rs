@@ -30,7 +30,7 @@ impl GitRepositoryService for TestGitService {
     }
 
     async fn fetch_repo_forks(&self, _owner: &str, _repo: &str) -> Result<Vec<Repo>, AppError> {
-        Ok(Vec::new()) 
+        Ok(Vec::new())
     }
 
     async fn fetch_recent_commits(

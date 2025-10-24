@@ -22,7 +22,6 @@ pub trait GitRepositoryService {
     ) -> Result<Commit, AppError>;
 }
 
-
 #[allow(async_fn_in_trait)]
 pub trait DataStorageService {
     async fn store_repository(&mut self, repo: &Repo) -> Result<(), AppError>;
