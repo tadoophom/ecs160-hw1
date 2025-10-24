@@ -27,6 +27,7 @@ impl ConfigSource for EnvSource {
 pub struct AppConfig {
     pub github: GitHubConfig,
     pub redis: RedisConfig,
+    pub clone: CloneConfig,
 }
 
 impl AppConfig {
@@ -40,6 +41,7 @@ impl AppConfig {
         Ok(Self {
             github: GitHubConfig::from_source(source)?,
             redis: RedisConfig::from_source(source)?,
+            clone: CloneConfig::from_source(source)?,
         })
     }
 }
@@ -91,5 +93,23 @@ impl RedisConfig {
             .unwrap_or_else(|| Self::DEFAULT_REDIS_URL.to_string());
 
         Ok(Self { url })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CloneConfig {
+    pub min_source_ratio: f64,
+}
+
+impl CloneConfig {
+    const DEFAULT_MIN_SOURCE_RATIO: f64 = 0.05;
+
+    fn from_source(source: &impl ConfigSource) -> Result<Self, AppError> {
+        let min_source_ratio = source
+            .get("CLONE_MIN_SOURCE_RATIO")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(Self::DEFAULT_MIN_SOURCE_RATIO);
+
+        Ok(Self { min_source_ratio })
     }
 }

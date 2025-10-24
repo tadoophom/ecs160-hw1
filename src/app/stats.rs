@@ -4,6 +4,9 @@ use crate::app::{LanguageReport, RepoMetrics};
 use crate::model::Repo;
 use std::collections::HashMap;
 
+/// Maximum number of forks to process commits for
+const MAX_FORKS_TO_PROCESS: usize = 20;
+
 /// Statistics calculator for repository data
 pub struct StatsCalculator;
 
@@ -18,7 +21,7 @@ impl StatsCalculator {
             let new_fork_commits: usize = repo
                 .forks
                 .iter()
-                .take(20) 
+                .take(MAX_FORKS_TO_PROCESS)
                 .map(|fork| Self::count_new_commits(fork))
                 .sum();
 

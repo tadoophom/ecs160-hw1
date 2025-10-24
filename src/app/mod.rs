@@ -65,13 +65,13 @@ pub async fn run() -> Result<(), AppError> {
         println!();
     }
 
-    // C: Clone and inspect repositories
+    // Part C: Clone and inspect repositories
     let clone_base_dir = std::path::Path::new("./cloned_repos");
-    clone::clone_best_repos(&language_reports, clone_base_dir).await?;
+    let cloned_repos = clone::clone_best_repos(&language_reports, clone_base_dir, config.clone.min_source_ratio).await?;
 
-    // D: Store results in Redis
+    // Part D: Store results in Redis (only store the cloned repos, not all 10)
     println!("\n=== Part D: Storing Results in Redis ===\n");
-    store_results_in_redis(&mut redis, &language_reports).await?;
+    store_cloned_repos_in_redis(&mut redis, &cloned_repos).await?;
 
     Ok(())
 }
@@ -86,14 +86,27 @@ pub async fn collect_language_report(
     Ok(StatsCalculator::build_language_report(language, repos))
 }
 
-async fn store_results_in_redis(
+async fn store_cloned_repos_in_redis(
     redis: &mut RedisService,
-    language_reports: &[LanguageReport],
+    cloned_repos: &[Repo],
 ) -> Result<(), AppError> {
-    for report in language_reports {
-        for repo in &report.repos {
-            redis.store_repository(repo).await?;
-        }
+    if cloned_repos.is_empty() {
+        println!("⚠ No repositories were cloned, skipping Redis storage");
+        return Ok(());
     }
+
+    println!("  Storing {} most popular source code repositories...", cloned_repos.len());
+    
+    for repo in cloned_repos {
+        redis.store_repository(repo).await?;
+        println!(
+            "    ✓ Stored {}/{} ({} stars)",
+            repo.owner.login,
+            repo.name,
+            repo.stargazers_count
+        );
+    }
+    
+    println!("\n✓ Successfully stored {} repositories in Redis", cloned_repos.len());
     Ok(())
 }

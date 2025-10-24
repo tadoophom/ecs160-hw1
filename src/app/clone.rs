@@ -14,10 +14,13 @@ pub struct CodeDetectionRules {
     pub source_extensions: HashSet<String>,
     /// Minimum ratio of source files to total files to consider it a code repo
     pub min_source_ratio: f64,
+    /// Maximum directory depth to scan
+    pub max_depth: usize,
 }
 
-impl Default for CodeDetectionRules {
-    fn default() -> Self {
+impl CodeDetectionRules {
+    /// Creates detection rules with provided parameters
+    pub fn new(min_source_ratio: f64, max_depth: usize) -> Self {
         let extensions = [
             // Languages we're analyzing
             "java",
@@ -38,8 +41,6 @@ impl Default for CodeDetectionRules {
             "toml",
             "xml",
             "properties",
-            "yaml",
-            "yml",
             "json",
             "sh",
             "bat",
@@ -56,8 +57,15 @@ impl Default for CodeDetectionRules {
 
         Self {
             source_extensions,
-            min_source_ratio: 0.05, // At least 5% source files (more lenient for large repos)
+            min_source_ratio,
+            max_depth,
         }
+    }
+}
+
+impl Default for CodeDetectionRules {
+    fn default() -> Self {
+        Self::new(0.05, 10)
     }
 }
 
@@ -71,7 +79,7 @@ pub fn check_for_source_code(
     let mut file_extensions: HashSet<String> = HashSet::new();
 
     if let Ok(entries) = walkdir::WalkDir::new(repo_path)
-        .max_depth(3) // Limit depth to avoid going too deep into large repos
+        .max_depth(rules.max_depth)
         .into_iter()
         .collect::<Result<Vec<_>, _>>()
     {
@@ -201,8 +209,9 @@ pub async fn find_best_code_repo(
     repos: &[Repo],
     language: &str,
     clone_base_dir: &Path,
+    min_source_ratio: f64,
 ) -> Result<Option<(Repo, CodeAnalysis)>, AppError> {
-    let rules = CodeDetectionRules::default();
+    let rules = CodeDetectionRules::new(min_source_ratio, 10);
 
     println!(
         "  Analyzing top {} repositories for source code content...",
@@ -249,17 +258,21 @@ pub async fn find_best_code_repo(
     Ok(None)
 }
 
+/// Clones the best repo for each language and returns the list of cloned repos
 pub async fn clone_best_repos(
     language_reports: &[crate::app::LanguageReport],
     clone_base_dir: &Path,
-) -> Result<(), AppError> {
+    min_source_ratio: f64,
+) -> Result<Vec<Repo>, AppError> {
     println!("\n=== Part C: Clone and Inspect Repositories ===\n");
+
+    let mut cloned_repos = Vec::new();
 
     for report in language_reports {
         println!("Processing {} repositories...", report.language);
         println!("{}", "=".repeat(50));
 
-        match find_best_code_repo(&report.repos, &report.language, clone_base_dir).await {
+        match find_best_code_repo(&report.repos, &report.language, clone_base_dir, min_source_ratio).await {
             Ok(Some((repo, analysis))) => {
                 println!(
                     "✓ Successfully cloned best source code repository for {}: {}",
@@ -270,6 +283,7 @@ pub async fn clone_best_repos(
                 println!("  - Source files: {}", analysis.source_files);
                 println!("  - Source ratio: {:.1}%", analysis.source_ratio * 100.0);
                 println!("  - File extensions: {:?}", analysis.file_extensions);
+                cloned_repos.push(repo);
             }
             Ok(None) => {
                 println!(
@@ -288,5 +302,5 @@ pub async fn clone_best_repos(
         println!();
     }
 
-    Ok(())
+    Ok(cloned_repos)
 }
