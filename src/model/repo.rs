@@ -4,6 +4,7 @@ use serde_json::Value;
 use crate::error::AppError;
 use crate::util::json::{
     as_object, optional_string, optional_u64, required_field, required_i64, required_string,
+    optional_bool,
 };
 
 use super::{Commit, Issue, Owner};
@@ -17,6 +18,7 @@ pub struct Repo {
     pub forks_count: u64,
     pub stargazers_count: u64,
     pub open_issues_count: u64,
+    pub has_issues: bool,
     pub language: Option<String>,
     pub owner: Owner,
     pub created_at: Option<String>,
@@ -37,6 +39,7 @@ impl Repo {
             forks_count: optional_u64(map, "forks_count"),
             stargazers_count: optional_u64(map, "stargazers_count"),
             open_issues_count: optional_u64(map, "open_issues_count"),
+            has_issues: optional_bool(map, "has_issues").unwrap_or(true),
             language: optional_string(map, "language"),
             owner: Owner::from_json(required_field(map, "owner")?)?,
             created_at: optional_string(map, "created_at"),

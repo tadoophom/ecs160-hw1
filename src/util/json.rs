@@ -64,6 +64,10 @@ pub fn optional_i64(map: &Map<String, Value>, field: &str) -> i64 {
     extract_optional(map, field, |v| v.as_i64()).unwrap_or_default()
 }
 
+pub fn optional_bool(map: &Map<String, Value>, field: &str) -> Option<bool> {
+    extract_optional(map, field, |v| v.as_bool())
+}
+
 pub fn parse_optional<T, F>(
     map: &Map<String, Value>,
     field: &str,

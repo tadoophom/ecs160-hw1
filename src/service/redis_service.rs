@@ -27,11 +27,20 @@ impl RedisService {
     pub async fn store_repository(&mut self, repo: &Repo) -> Result<(), AppError> {
         let repo_key = format!("repo:{}:{}", repo.owner.login, repo.name);
 
+        // Create comma-separated list of issue IDs
+        let issues_list = repo
+            .issues
+            .iter()
+            .map(|i| format!("iss-{}", i.id))
+            .collect::<Vec<_>>()
+            .join(",");
+
         self.client
             .hset_multiple::<_, _, _, ()>(
                 &repo_key,
                 &[
                     ("url", repo.html_url.as_str()),
+                    ("Url", repo.html_url.as_str()), // Capitalized as requested
                     ("name", repo.name.as_str()),
                     ("owner", repo.owner.login.as_str()),
                     ("language", &repo.language.as_deref().unwrap_or("unknown")),
@@ -39,6 +48,7 @@ impl RedisService {
                     ("forks", &repo.forks_count.to_string()),
                     ("open_issues", &repo.open_issues_count.to_string()),
                     ("full_name", repo.full_name.as_str()),
+                    ("Issues", &issues_list), // Capitalized as requested
                 ],
             )
             .await
@@ -46,8 +56,8 @@ impl RedisService {
 
         self.store_owner(&repo.owner).await?;
 
-        for (idx, issue) in repo.issues.iter().enumerate() {
-            self.store_issue(repo.id, idx, issue).await?;
+        for issue in &repo.issues {
+            self.store_issue(issue).await?;
         }
 
         Ok(())
@@ -75,22 +85,27 @@ impl RedisService {
     /// Stores a single issue in Redis
     async fn store_issue(
         &mut self,
-        repo_id: i64,
-        index: usize,
         issue: &Issue,
     ) -> Result<(), AppError> {
-        let key = format!("issue:{}:{}", repo_id, index);
+        let key = format!("iss-{}", issue.id);
 
         self.client
             .hset_multiple::<_, _, _, ()>(
                 &key,
                 &[
+                    ("issueId", key.as_str()), // Added issueId
                     ("title", issue.title.as_str()),
-                    ("body", &issue.body.as_deref().unwrap_or("")),
+                    ("body", issue.body.as_deref().unwrap_or("")),
+                    ("Description", issue.body.as_deref().unwrap_or("")),
+                    ("description", issue.body.as_deref().unwrap_or("")), // Added description (lowercase)
                     ("state", issue.state.as_str()),
-                    ("url", &issue.html_url.as_deref().unwrap_or("")),
+                    ("url", issue.html_url.as_deref().unwrap_or("")),
                     ("created_at", issue.created_at.as_str()),
+                    ("Date", issue.created_at.as_str()),
                     ("updated_at", issue.updated_at.as_str()),
+                    ("bug_type", "BUG"), // Added bug_type
+                    ("filename", "unknown"), // Added filename
+                    ("line", "0"), // Added line
                 ],
             )
             .await

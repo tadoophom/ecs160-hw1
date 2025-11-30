@@ -14,7 +14,7 @@ use output::OutputFormatter;
 use repo_fetcher::RepoFetcher;
 use stats::StatsCalculator;
 
-const TARGET_LANGUAGES: &[&str] = &["Java", "C", "C++", "Rust"];
+const TARGET_LANGUAGES: &[&str] = &["C"];
 
 #[derive(Debug)]
 pub struct LanguageReport {

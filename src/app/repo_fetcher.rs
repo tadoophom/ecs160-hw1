@@ -33,6 +33,19 @@ impl<'a, S: GitRepositoryService> RepoFetcher<'a, S> {
             .service
             .fetch_top_repositories(language, TOP_REPOSITORIES_COUNT)
             .await?;
+        
+        // Filter for C language: find first repo with issues enabled
+        if language == "C" {
+            if let Some(repo_with_issues) = repos.iter().find(|r| r.has_issues && r.open_issues_count > 0) {
+                println!("      ✓ Found C repository with issues: {}", repo_with_issues.slug());
+                let target_repo = repo_with_issues.clone();
+                repos = vec![target_repo];
+            } else {
+                println!("      ⚠ No C repository with issues found in top results");
+                repos.clear();
+            }
+        }
+
         println!("      ✓ Found {} repositories", repos.len());
 
         println!("  [2/4] Fetching commits and issues for each repository...");
